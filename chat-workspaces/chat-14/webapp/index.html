@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛒 Магазин аккаунтов</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #f0f2f5);
+            color: var(--tg-theme-text-color, #1a1a1a);
+            min-height: 100vh;
+        }
+        .header {
+            background: var(--tg-theme-header-bg-color, #0088cc);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .header p { font-size: 13px; opacity: 0.85; }
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+        .filters {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px 0 12px;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #fff);
+            font-size: 14px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: opacity .2s;
+        }
+        .filter-btn.active { opacity: 1; }
+        .filter-btn:not(.active) { background: var(--tg-theme-secondary-bg-color, #e4e6eb); color: var(--tg-theme-text-color, #1a1a1a); }
+        .listing-card {
+            background: var(--tg-theme-secondary-bg-color, #fff);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+        .listing-card .cat-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--tg-theme-button-color, #0088cc);
+            color: #fff;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .listing-card h3 { font-size: 16px; margin-bottom: 6px; }
+        .listing-card .desc { font-size: 14px; opacity: 0.7; margin-bottom: 12px; white-space: pre-wrap; }
+        .listing-card .price { font-size: 20px; font-weight: 700; color: var(--tg-theme-button-color, #0088cc); }
+        .listing-card .buy-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #fff);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .empty { text-align: center; padding: 60px 20px; opacity: 0.5; }
+        .empty h2 { font-size: 18px; margin-bottom: 8px; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛒 Магазин аккаунтов</h1>
+        <p>Каталог доступных объявлений</p>
+    </div>
+    <div class="container">
+        <div class="filters" id="filters"></div>
+        <div id="listings"></div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) tg.ready();
+
+        let currentFilter = 'all';
+        let allListings = [];
+
+        const categories = [
+            { key: 'all', label: 'Все' },
+            { key: 'steam', label: '🎮 Steam' },
+            { key: 'telegram', label: '✈️ Telegram' },
+            { key: 'nakrut_tg', label: '📈 Накрутка TG' },
+            { key: 'nakrut_vk', label: '🔵 Накрутка VK' },
+            { key: 'nakrut_yt', label: '▶️ Накрутка YouTube' },
+            { key: 'nakrut_tt', label: '🎵 Накрутка TikTok' },
+            { key: 'nakrut_ig', label: '📸 Накрутка Instagram' },
+        ];
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function renderFilters() {
+            const el = document.getElementById('filters');
+            el.innerHTML = '';
+            categories.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn' + (currentFilter === c.key ? ' active' : '');
+                btn.textContent = c.label;
+                btn.onclick = () => {
+                    currentFilter = c.key;
+                    renderFilters();
+                    renderListings();
+                };
+                el.appendChild(btn);
+            });
+        }
+
+        function renderListings() {
+            const el = document.getElementById('listings');
+            let filtered = currentFilter === 'all'
+                ? allListings
+                : allListings.filter(l => l.category_key === currentFilter);
+
+            if (filtered.length === 0) {
+                el.innerHTML = '<div class="empty"><h2>😕 Нет объявлений</h2><p>Загляните позже</p></div>';
+                return;
+            }
+
+            el.innerHTML = '';
+            filtered.forEach(l => {
+                const card = document.createElement('div');
+                card.className = 'listing-card';
+                card.innerHTML = `
+                    <span class="cat-badge">${l.category_label}</span>
+                    <h3>${escapeHtml(l.title)}</h3>
+                    <div class="desc">${escapeHtml(l.description)}</div>
+                    <div class="price">${l.price} ⭐</div>
+                    <button class="buy-btn" onclick="buyItem(${l.id})">Купить за ${l.price} ⭐</button>
+                `;
+                el.appendChild(card);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function buyItem(id) {
+            const user = tg?.initDataUnsafe?.user;
+            if (!user) {
+                showToast('Откройте через Telegram');
+                return;
+            }
+            showToast('Покупка обрабатывается...');
+            try {
+                const resp = await fetch('/api/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ listing_id: id, user_id: user.id, username: user.username })
+                });
+                const data = await resp.json();
+                if (data.ok) {
+                    showToast('✅ Покупка успешна!');
+                    await loadListings();
+                } else {
+                    showToast('❌ ' + (data.error || 'Ошибка'));
+                }
+            } catch(e) {
+                showToast('❌ Ошибка сети');
+            }
+        }
+
+        async function loadListings() {
+            try {
+                const resp = await fetch('/api/listings');
+                const data = await resp.json();
+                if (data.ok) {
+                    allListings = data.listings;
+                    renderListings();
+                }
+            } catch(e) {
+                document.getElementById('listings').innerHTML = '<div class="empty"><h2>Ошибка загрузки</h2></div>';
+            }
+        }
+
+        renderFilters();
+        loadListings();
+        if (tg) tg.expand();
+    </script>
+</body>
+</html>
