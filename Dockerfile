@@ -55,6 +55,12 @@ COPY --from=builder /app/artifacts/ai-agent/package.json ./artifacts/ai-agent/pa
 COPY --from=builder /app/lib/db ./lib/db
 COPY --from=builder /app/lib/api-zod ./lib/api-zod
 
+# Copy remaining workspace package stubs for pnpm workspace resolution
+COPY --from=builder /app/lib/api-client-react/package.json ./lib/api-client-react/package.json
+COPY --from=builder /app/lib/api-spec/package.json ./lib/api-spec/package.json
+COPY --from=builder /app/artifacts/mockup-sandbox/package.json ./artifacts/mockup-sandbox/package.json
+COPY --from=builder /app/scripts/package.json ./scripts/package.json
+
 # Copy node_modules to run code and run database push migrations
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/artifacts/api-server/node_modules ./artifacts/api-server/node_modules
