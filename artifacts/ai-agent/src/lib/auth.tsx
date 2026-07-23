@@ -18,38 +18,42 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>({
+    id: "mock_user_id",
+    email: "mock@example.com",
+    created_at: new Date().toISOString(),
+    app_metadata: {},
+    user_metadata: {},
+    aud: "authenticated",
+    role: "authenticated",
+  } as User);
+  const [session, setSession] = useState<Session | null>({
+    access_token: "mock_token",
+    token_type: "bearer",
+    expires_in: 3600,
+    refresh_token: "mock_refresh",
+    user: {
+      id: "mock_user_id",
+      email: "mock@example.com",
+      created_at: new Date().toISOString(),
+      app_metadata: {},
+      user_metadata: {},
+      aud: "authenticated",
+      role: "authenticated",
+    } as User,
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Register token getter for the API client
     setAuthTokenGetter(async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      return currentSession?.access_token ?? null;
+      return "mock_token";
     });
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   };
 
   return (
