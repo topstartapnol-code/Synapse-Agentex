@@ -37,7 +37,7 @@ if (process.env.NODE_ENV === "production") {
   const publicPath = path.resolve(__dirname, "../../ai-agent/dist/public");
   app.use(express.static(publicPath));
 
-  app.get("*", (req, res, next) => {
+  app.get("{*splat}", (req, res, next) => {
     if (req.path.startsWith("/api")) {
       return next();
     }

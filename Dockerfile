@@ -70,4 +70,4 @@ COPY --from=dependencies /app/lib/api-zod/node_modules ./lib/api-zod/node_module
 EXPOSE 5000
 
 # Push DB schema changes at startup, then launch the API Server (which serves the frontend SPA)
-CMD ["sh", "-c", "pnpm --filter @workspace/db run push && node artifacts/api-server/dist/index.mjs"]
+CMD ["sh", "-c", "pnpm --filter @workspace/db run push-force && node artifacts/api-server/dist/index.mjs"]
