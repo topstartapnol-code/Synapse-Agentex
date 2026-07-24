@@ -1658,10 +1658,9 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
     const thinkingSuffix = THINKING_SUFFIXES[thinkingLevel || "auto"] ?? "";
     const effectiveSystemPrompt = AGENT_SYSTEM_PROMPT + modeSuffix + thinkingSuffix;
 
-    const priorHistory = history.slice(0, -1);
     const messages: { role: string; content: MsgContent }[] = [
       { role: "system", content: effectiveSystemPrompt },
-      ...priorHistory.map(m => ({ role: m.role, content: m.content })),
+      ...history.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
       { role: "user", content: currentUserContent },
     ];
 
@@ -1778,12 +1777,18 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
       }
     }
 
-    // Execute all tool calls found in model output
-    const { hasTools, toolResults, statusMessages } = await executeTools(fullContent, chatRoot, (status) => {
-      send({ type: "status", status });
-    });
+    // Multi-turn tool execution loop (allows chained tools e.g. telegram_auth_complete -> crawl_telegram_bot)
+    let toolLoop = 0;
+    const MAX_TOOL_LOOPS = 5;
 
-    if (hasTools) {
+    while (toolLoop < MAX_TOOL_LOOPS) {
+      const { hasTools, toolResults, statusMessages } = await executeTools(fullContent, chatRoot, (status) => {
+        send({ type: "status", status });
+      });
+
+      if (!hasTools) break;
+      toolLoop++;
+
       for (const s of statusMessages) send({ type: "status", status: s });
 
       await db.insert(messagesTable).values({
@@ -1792,13 +1797,8 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
 
       send({ type: "status", status: "Обрабатываю результаты..." });
 
-      const messagesWithTools: { role: string; content: MsgContent }[] = [
-        { role: "system", content: effectiveSystemPrompt },
-        ...history.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
-        { role: "user", content: currentUserContent },
-        { role: "assistant", content: fullContent },
-        { role: "user", content: toolResults },
-      ];
+      messages.push({ role: "assistant", content: fullContent });
+      messages.push({ role: "user", content: toolResults });
 
       const abort2 = new AbortController();
       const timeout2 = setTimeout(() => abort2.abort(), 120_000);
@@ -1813,7 +1813,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
             "HTTP-Referer": "https://synapse-agent.replit.app",
             "X-Title": "SYNAPSE AGENT",
           },
-          body: JSON.stringify({ model: activeModel, messages: messagesWithTools, stream: true, max_tokens: 16384 }),
+          body: JSON.stringify({ model: activeModel, messages, stream: true, max_tokens: 16384 }),
         });
       } catch {
         send({ type: "status", status: "⏱️ Таймаут финального ответа" });
