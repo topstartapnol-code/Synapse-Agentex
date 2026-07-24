@@ -394,7 +394,11 @@ async function telegramAuthComplete(phone: string, code: string): Promise<string
 }
 
 /* ── crawl_telegram_bot ──────────────────────────────────────────────── */
-async function crawlTelegramBot(username: string, sessionString: string): Promise<string> {
+async function crawlTelegramBot(
+  username: string,
+  sessionString: string,
+  onStatus?: (msg: string) => void
+): Promise<string> {
   const apiId = parseInt(process.env.TELEGRAM_API_ID || "0");
   const apiHash = process.env.TELEGRAM_API_HASH || "";
 
@@ -476,6 +480,7 @@ async function crawlTelegramBot(username: string, sessionString: string): Promis
     }
 
     // Send /start
+    onStatus?.(`Подключаюсь к @${clean} и отправляю /start...`);
     const preStartMsgs = await client.getMessages(entity, { limit: 1 }) as any[];
     const lastId = preStartMsgs[0]?.id || 0;
     await client.sendMessage(entity, { message: "/start" });
@@ -488,6 +493,7 @@ async function crawlTelegramBot(username: string, sessionString: string): Promis
 
     // Also try /help to get command list
     try {
+      onStatus?.("Отправляю команду /help...");
       const beforeHelp = await client.getMessages(entity, { limit: 1 }) as any[];
       const helpLastId = (beforeHelp[0]?.id || 0) as number;
       await client.sendMessage(entity, { message: "/help" });
@@ -508,6 +514,7 @@ async function crawlTelegramBot(username: string, sessionString: string): Promis
           visited.add(key);
 
           try {
+            onStatus?.(`Исследую меню: ${pathLabel} → [${btnText}]...`);
             const beforeMsgs2 = await client.getMessages(entity, { limit: 1 }) as any[];
             const beforeId = (beforeMsgs2[0]?.id || 0) as number;
 
@@ -1053,7 +1060,7 @@ async function checkPort(portNumber: number): Promise<string> {
 
 /* ── Execute all tool calls found in model output ───────────────────── */
 async function executeTools(
-  fullContent: string, chatRoot: string
+  fullContent: string, chatRoot: string, onStatus?: (msg: string) => void
 ): Promise<{ hasTools: boolean; toolResults: string; statusMessages: string[] }> {
   const statusMessages: string[] = [];
   const resultParts: string[] = [];
@@ -1183,7 +1190,7 @@ async function executeTools(
       const username = m[1];
       const session = m[2];
       try {
-        const crawlResult = await crawlTelegramBot(username, session);
+        const crawlResult = await crawlTelegramBot(username, session, onStatus);
         resultParts.push(`### 🕷️ crawl_telegram_bot("${username}")\n${crawlResult}`);
       } catch (e) {
         resultParts.push(`### 🕷️ crawl_telegram_bot("${username}")\n⚠️ Ошибка: ${e instanceof Error ? e.message : String(e)}`);
@@ -1735,7 +1742,9 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
     }
 
     // Execute all tool calls found in model output
-    const { hasTools, toolResults, statusMessages } = await executeTools(fullContent, chatRoot);
+    const { hasTools, toolResults, statusMessages } = await executeTools(fullContent, chatRoot, (status) => {
+      send({ type: "status", status });
+    });
 
     if (hasTools) {
       for (const s of statusMessages) send({ type: "status", status: s });
