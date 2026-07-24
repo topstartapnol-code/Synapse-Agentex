@@ -54,7 +54,7 @@ Use XML tags (self-closing or with content) to invoke tools:
 - \`<analyze_telegram_bot username="@botname" />\` — fetch public info about the bot (description, web mentions, bot directories). After this tool, always offer the user to use \`crawl_telegram_bot\` with a session string for a deep automatic crawl, OR ask them to share screenshots.
 - \`<crawl_telegram_bot username="@botname" session="SESSION_STRING" />\` — **deep automatic crawl** of the bot using a real Telegram user session. Connects as a real user, sends /start, automatically walks through ALL inline keyboard menus (up to 3 levels deep), records every button label, message text, and navigation flow. Returns a complete menu tree ready for cloning.
 - \`<telegram_auth_start phone="+7XXXXXXXXXX" />\` — start Telegram login: sends a code to the user's phone/Telegram app. Must ask the user for their phone number first. Before calling this, ALWAYS warn: "Ты можешь отменить авторизацию в любой момент, просто напиши 'отмена'."
-- \`<telegram_auth_complete phone="+7XXXXXXXXXX" code="XXXXX" />\` — complete Telegram login with the received code. Returns session string on success. If the user says "отмена" / "cancel" / "отказаться" at any point in the auth flow — immediately stop without calling any tools and reply: "Авторизация отменена. Ничего не сохранено."
+- \`<telegram_auth_complete phone="+7XXXXXXXXXX" code="XXXXX" />\` — complete Telegram login with the received code. Returns session string on success. **CRITICAL**: When this tool returns, you MUST immediately call \`<crawl_telegram_bot username="@botname" session="SESSION_STRING" />\` in your reply using the received session string. DO NOT invent or pretend to know the bot structure until you execute this tool!
 
 ### Git & GitHub
 - \`<git_commit_and_push branch="main" message="feat: add feature" repo="owner/repo" />\` — commit and push
@@ -375,10 +375,12 @@ async function telegramAuthComplete(phone: string, code: string): Promise<string
     try { await client.disconnect(); } catch {}
 
     return (
-      `✅ Авторизация успешна!\n\n` +
-      `**Session String** (сохрани — он многоразовый, больше не надо вводить код):\n` +
+      `✅ Авторизация прошла успешно!\n\n` +
+      `**Session String**:\n` +
       `\`\`\`\n${sessionString}\n\`\`\`\n\n` +
-      `Теперь используй его для \`crawl_telegram_bot\`.`
+      `⚠️ ВАЖНО ДЛЯ АГЕНТА: ПРЯМО СЕЙЧАС в этом же ответе вызови тег глубокого обхода бота:\n` +
+      `<crawl_telegram_bot username="@ИМЯ_ЦЕЛЕВОГО_БОТА" session="${sessionString}" />\n` +
+      `Обязательно замени @ИМЯ_ЦЕЛЕВОГО_БОТА на username целевого бота. НЕ придумывай результаты вручную, пока не вызовешь инструмент!`
     );
   } catch (e: any) {
     if (e.message?.includes("SESSION_PASSWORD_NEEDED") || e.code === 401) {
@@ -1183,12 +1185,13 @@ async function executeTools(
   }
 
   // crawl_telegram_bot
-  const crawlBotMatches = [...fullContent.matchAll(/<crawl_telegram_bot\s+username="([^"]+)"\s+session="([^"]+)"\s*\/>/g)];
+  const crawlBotRegex = /<crawl_telegram_bot\s+(?:username=["']([^"']+)["']\s+session=["']([^"']+)["']|session=["']([^"']+)["']\s+username=["']([^"']+)["'])\s*\/?>/gi;
+  const crawlBotMatches = [...fullContent.matchAll(crawlBotRegex)];
   if (crawlBotMatches.length) {
     statusMessages.push("Подключаюсь к Telegram и обхожу меню бота...");
     for (const m of crawlBotMatches) {
-      const username = m[1];
-      const session = m[2];
+      const username = m[1] || m[4];
+      const session = m[2] || m[3];
       try {
         const crawlResult = await crawlTelegramBot(username, session, onStatus);
         resultParts.push(`### 🕷️ crawl_telegram_bot("${username}")\n${crawlResult}`);
