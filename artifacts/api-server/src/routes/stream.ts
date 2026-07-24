@@ -464,16 +464,35 @@ async function crawlTelegramBot(
     }
 
     const results: string[] = [];
-    const visited = new Set<string>();
+    const visitedButtons = new Set<string>();
+    let clickCount = 0;
+    const MAX_CLICKS = 30;
+
+    function getButtonKey(btn: any): string {
+      if (btn.data) {
+        const raw = typeof btn.data === "string" ? btn.data : Buffer.from(btn.data).toString("hex");
+        return `cb:${raw}`;
+      }
+      if (btn.url) return `url:${btn.url}`;
+      return `txt:${(btn.text || "").toLowerCase().trim()}`;
+    }
+
+    function isNavBackButton(text: string): boolean {
+      const t = text.toLowerCase().trim();
+      return (
+        t === "назад" || t === "back" || t === "в меню" || t === "главное меню" ||
+        t === "отмена" || t === "cancel" || t === "меню" ||
+        t.includes("⬅️") || t.includes("◀️") || t.includes("🏠") || t.includes("🔙")
+      );
+    }
 
     // Wait for bot response — polls twice to catch slow bots
     async function waitForBotMsgs(lastId: number): Promise<any[]> {
-      await new Promise(r => setTimeout(r, 2500));
+      await new Promise(r => setTimeout(r, 2000));
       const msgs = await client.getMessages(entity, { limit: 10 }) as any[];
       let newMsgs = msgs.filter((m: any) => !m.out && m.id > lastId);
-      // If nothing yet, wait another second
       if (newMsgs.length === 0) {
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 1200));
         const msgs2 = await client.getMessages(entity, { limit: 10 }) as any[];
         newMsgs = msgs2.filter((m: any) => !m.out && m.id > lastId);
       }
@@ -495,7 +514,6 @@ async function crawlTelegramBot(
           }).join("  ")
         );
         if (btnRows.length) lines.push(`**Кнопки:**\n${btnRows.join("\n")}`);
-        // Also capture reply keyboard (non-inline)
         const replyRows = msg?.replyMarkup?.rows?.filter?.((r: any) =>
           r.buttons?.some?.((b: any) => b.className === "KeyboardButton")
         ) || [];
@@ -519,9 +537,9 @@ async function crawlTelegramBot(
       return "⚠️ Бот не ответил на /start в течение 4 секунд";
     }
     results.push(describeMsg(startMsgs, "/start (главное меню)"));
-    const startMsg = startMsgs[startMsgs.length - 1]; // last message has the keyboard
+    const startMsg = startMsgs[startMsgs.length - 1];
 
-    // Also try /help to get command list
+    // Also try /help
     try {
       onStatus?.("Отправляю команду /help...");
       const beforeHelp = await client.getMessages(entity, { limit: 1 }) as any[];
@@ -531,24 +549,34 @@ async function crawlTelegramBot(
       if (helpMsgs.length) results.push(describeMsg(helpMsgs, "/help (список команд)"));
     } catch {}
 
-    // Recursively click inline buttons (up to 5 levels deep)
+    // Recursively click unique buttons without looping
     async function crawlMsg(msg: any, depth: number, pathLabel: string) {
-      if (depth > 5 || !msg?.replyMarkup?.rows) return;
+      if (depth > 3 || clickCount >= MAX_CLICKS || !msg?.replyMarkup?.rows) return;
       const rows: any[] = msg.replyMarkup.rows || [];
 
       for (const row of rows) {
         for (const btn of (row.buttons || []) as any[]) {
-          const btnText: string = btn.text || "?";
-          const key = `${pathLabel}::${btnText}`;
-          if (visited.has(key)) continue;
-          visited.add(key);
+          if (clickCount >= MAX_CLICKS) break;
 
+          const btnText: string = (btn.text || "?").trim();
+          const btnKey = getButtonKey(btn);
+
+          // Skip if this exact button (callback payload / URL) was already clicked
+          if (visitedButtons.has(btnKey)) continue;
+          visitedButtons.add(btnKey);
+
+          // Skip back/navigation buttons to prevent back-and-forth loops
+          if (isNavBackButton(btnText)) {
+            results.push(`### ${pathLabel} → [${btnText}]\n**Тип:** 🔙 Навигационная кнопка (пропущена для предотвращения цикла)`);
+            continue;
+          }
+
+          clickCount++;
           try {
-            onStatus?.(`Исследую меню: ${pathLabel} → [${btnText}]...`);
+            onStatus?.(`[${clickCount}/${MAX_CLICKS}] Исследую: ${pathLabel} → [${btnText}]...`);
             const beforeMsgs2 = await client.getMessages(entity, { limit: 1 }) as any[];
             const beforeId = (beforeMsgs2[0]?.id || 0) as number;
 
-            // WebApp / Mini App buttons
             const isWebView = btn.className === "KeyboardButtonWebView" ||
                               btn.className === "KeyboardButtonSimpleWebView" ||
                               btn.className === "KeyboardButtonUserProfile" ||
@@ -561,12 +589,11 @@ async function crawlTelegramBot(
                 data: btn.data,
               }));
             } else if (isWebView || btn.className?.includes("WebView")) {
-              // Mini App / WebApp button — record URL for agent analysis
               results.push(
                 `### ${pathLabel} → [${btnText}]\n` +
                 `**Тип:** 🌐 MINI APP (WebApp)\n` +
-                `**URL мини-аппа:** ${btn.url || "(URL не доступен через MTProto)"}\n` +
-                `**Важно для клонирования:** это Telegram Mini App — нужно создать отдельное веб-приложение (HTML/JS/CSS) с Telegram WebApp SDK`
+                `**URL мини-аппа:** ${btn.url || "(URL не доступен)"}\n` +
+                `**Важно:** это Telegram Mini App`
               );
               continue;
             } else if (btn.className === "KeyboardButtonUrl") {
@@ -595,7 +622,7 @@ async function crawlTelegramBot(
 
     return (
       `# 🕷️ Полная карта меню @${clean}\n\n` +
-      `> Автоматически обойдено ${visited.size} кнопок, 3 уровня глубины\n\n` +
+      `> Успешно исследовано ${clickCount} уникальных кнопок без зацикливания\n\n` +
       results.join("\n\n---\n\n")
     );
   } catch (err: any) {
