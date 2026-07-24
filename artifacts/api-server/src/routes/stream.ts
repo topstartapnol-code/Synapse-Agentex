@@ -317,9 +317,14 @@ async function telegramAuthStart(phone: string): Promise<string> {
   const apiHash = process.env.TELEGRAM_API_HASH || "";
   if (!apiId || !apiHash) {
     return (
-      "⚠️ Необходимо задать TELEGRAM_API_ID и TELEGRAM_API_HASH.\n\n" +
+      "⚠️ Необходимо задать TELEGRAM_API_ID и TELEGRAM_API_HASH в переменных Railway.\n\n" +
       "Получить: https://my.telegram.org → API development tools → создай приложение."
     );
+  }
+
+  const cleanPhone = phone.replace(/[^+\d]/g, "");
+  if (!cleanPhone || cleanPhone.length < 8) {
+    return "⚠️ Некорректный номер телефона. Укажи номер в международном формате (например +79991234567).";
   }
 
   const tgMod = await import("telegram") as any;
@@ -328,7 +333,7 @@ async function telegramAuthStart(phone: string): Promise<string> {
   const { StringSession } = sessMod;
 
   // Cleanup any previous pending auth for this phone
-  const existing = pendingTgAuths.get(phone);
+  const existing = pendingTgAuths.get(cleanPhone);
   if (existing) { try { existing.client.disconnect(); } catch {} }
 
   const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
@@ -336,28 +341,33 @@ async function telegramAuthStart(phone: string): Promise<string> {
     requestRetries: 2,
     autoReconnect: false,
   });
-  await client.connect();
 
-  const result = await client.sendCode({ apiId, apiHash }, phone);
-  const phoneCodeHash = (result as any).phoneCodeHash as string;
+  try {
+    await client.connect();
+    const result = await client.sendCode({ apiId, apiHash }, cleanPhone);
+    const phoneCodeHash = (result as any).phoneCodeHash as string;
 
-  pendingTgAuths.set(phone, {
-    client,
-    phoneCodeHash,
-    expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes TTL
-  });
+    pendingTgAuths.set(cleanPhone, {
+      client,
+      phoneCodeHash,
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes TTL
+    });
 
-  return (
-    `✅ Код отправлен на ${phone} (в Telegram-приложение или SMS).\n\n` +
-    `Введи код в следующем сообщении.\n` +
-    `Чтобы отменить — напиши "отмена".`
-  );
+    return (
+      `✅ Код отправлен на номер ${cleanPhone} (в Telegram-приложение или SMS).\n\n` +
+      `Введи полученный 5-значный код в ответе.`
+    );
+  } catch (e: any) {
+    try { await client.disconnect(); } catch {}
+    return `⚠️ Ошибка отправки кода Telegram на ${cleanPhone}: ${e?.message || String(e)}`;
+  }
 }
 
 async function telegramAuthComplete(phone: string, code: string): Promise<string> {
-  const pending = pendingTgAuths.get(phone);
+  const cleanPhone = phone.replace(/[^+\d]/g, "");
+  const pending = pendingTgAuths.get(cleanPhone) || pendingTgAuths.get(phone);
   if (!pending) {
-    return "⚠️ Сессия авторизации не найдена или истекла (10 мин). Начни заново.";
+    return "⚠️ Сессия авторизации не найдена или истекла (10 мин). Отправь номер телефона заново.";
   }
   const { client, phoneCodeHash } = pending;
   const tgMod = await import("telegram") as any;
@@ -365,12 +375,13 @@ async function telegramAuthComplete(phone: string, code: string): Promise<string
 
   try {
     await client.invoke(new Api.auth.SignIn({
-      phoneNumber: phone,
+      phoneNumber: cleanPhone,
       phoneCodeHash,
       phoneCode: code.trim().replace(/\s/g, ""),
     }));
 
     const sessionString = (client.session as any).save() as string;
+    pendingTgAuths.delete(cleanPhone);
     pendingTgAuths.delete(phone);
     try { await client.disconnect(); } catch {}
 
@@ -1157,7 +1168,8 @@ async function executeTools(
   }
 
   // telegram_auth_start
-  const tgAuthStartMatches = [...fullContent.matchAll(/<telegram_auth_start\s+phone="([^"]+)"\s*\/>/g)];
+  const tgAuthStartRegex = /<telegram_auth_start\s+phone=["']([^"']+)["']\s*\/?>/gi;
+  const tgAuthStartMatches = [...fullContent.matchAll(tgAuthStartRegex)];
   if (tgAuthStartMatches.length) {
     statusMessages.push("Отправляю код авторизации Telegram...");
     for (const m of tgAuthStartMatches) {
@@ -1171,12 +1183,15 @@ async function executeTools(
   }
 
   // telegram_auth_complete
-  const tgAuthCompleteMatches = [...fullContent.matchAll(/<telegram_auth_complete\s+phone="([^"]+)"\s+code="([^"]+)"\s*\/>/g)];
+  const tgAuthCompleteRegex = /<telegram_auth_complete\s+(?:phone=["']([^"']+)["']\s+code=["']([^"']+)["']|code=["']([^"']+)["']\s+phone=["']([^"']+)["'])\s*\/?>/gi;
+  const tgAuthCompleteMatches = [...fullContent.matchAll(tgAuthCompleteRegex)];
   if (tgAuthCompleteMatches.length) {
     statusMessages.push("Завершаю авторизацию Telegram...");
     for (const m of tgAuthCompleteMatches) {
+      const phone = m[1] || m[4];
+      const code = m[2] || m[3];
       try {
-        const res = await telegramAuthComplete(m[1], m[2]);
+        const res = await telegramAuthComplete(phone, code);
         resultParts.push(`### 🔐 telegram_auth_complete\n${res}`);
       } catch (e) {
         resultParts.push(`### 🔐 telegram_auth_complete\n⚠️ ${e instanceof Error ? e.message : String(e)}`);
