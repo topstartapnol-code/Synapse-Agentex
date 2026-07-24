@@ -442,9 +442,26 @@ async function crawlTelegramBot(
   });
 
   try {
+    onStatus?.("Подключаюсь к сессии Telegram...");
     await client.connect();
     const clean = username.replace(/^@/, "");
-    const entity = await client.getEntity(clean);
+
+    onStatus?.(`Ищу бота @${clean} в Telegram...`);
+    let entity: any;
+    try {
+      entity = await client.getEntity(clean);
+    } catch {
+      try {
+        const res = await client.invoke(new Api.contacts.ResolveUsername({ username: clean }));
+        entity = (res.users && res.users[0]) || (res.chats && res.chats[0]);
+      } catch (resErr: any) {
+        return `⚠️ Не удалось найти бота @${clean} в Telegram: ${resErr?.message || String(resErr)}`;
+      }
+    }
+
+    if (!entity) {
+      return `⚠️ Бот @${clean} не найден в Telegram. Проверь правильно ли указано имя.`;
+    }
 
     const results: string[] = [];
     const visited = new Set<string>();
@@ -581,6 +598,8 @@ async function crawlTelegramBot(
       `> Автоматически обойдено ${visited.size} кнопок, 3 уровня глубины\n\n` +
       results.join("\n\n---\n\n")
     );
+  } catch (err: any) {
+    return `⚠️ Ошибка при выполнении обхода бота @${username}: ${err?.message || String(err)}`;
   } finally {
     try { await client.disconnect(); } catch {}
   }
