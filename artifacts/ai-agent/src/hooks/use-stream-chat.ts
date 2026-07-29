@@ -10,9 +10,14 @@ export function useStreamChat(chatId: number | null, onFilesCreated?: () => void
   const [lastFullContent, setLastFullContent] = useState<string | null>(null);
   const contentRef = useRef('');
   const abortRef = useRef<AbortController | null>(null);
+  const rafRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   const cancelStream = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
     abortRef.current?.abort();
     abortRef.current = null;
     setIsStreaming(false);
@@ -80,7 +85,12 @@ export function useStreamChat(chatId: number | null, onFilesCreated?: () => void
 
             if (event.type === 'chunk' && event.content) {
               contentRef.current += event.content;
-              setStreamContent(contentRef.current);
+              if (!rafRef.current) {
+                rafRef.current = requestAnimationFrame(() => {
+                  setStreamContent(contentRef.current);
+                  rafRef.current = null;
+                });
+              }
             } else if (event.type === 'status' && event.status) {
               setStreamStatus(event.status);
             } else if (event.type === 'title') {
@@ -88,6 +98,10 @@ export function useStreamChat(chatId: number | null, onFilesCreated?: () => void
             } else if (event.type === 'files_created') {
               onFilesCreated?.();
             } else if (event.type === 'done') {
+              if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+              }
               setLastFullContent(contentRef.current);
               setIsStreaming(false);
               setStreamStatus(null);
@@ -95,6 +109,10 @@ export function useStreamChat(chatId: number | null, onFilesCreated?: () => void
               queryClient.invalidateQueries({ queryKey: getListMessagesQueryKey(chatId) });
               queryClient.invalidateQueries({ queryKey: getListChatsQueryKey() });
             } else if (event.type === 'error') {
+              if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+              }
               setIsStreaming(false);
               setStreamStatus(null);
               setStreamContent('');
@@ -114,6 +132,10 @@ export function useStreamChat(chatId: number | null, onFilesCreated?: () => void
       setStreamStatus(null);
       setStreamContent('');
     } finally {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       abortRef.current = null;
     }
   }, [chatId, queryClient, onFilesCreated]);

@@ -1595,12 +1595,14 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
     thinkingLevel?: string;
   };
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform, no-store, must-revalidate");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("X-Accel-Buffering", "no");   // disable nginx/proxy buffering
+  res.setHeader("X-Accel-Buffering", "no");
+  res.setHeader("Surrogate-Control", "no-store");
   res.setHeader("Transfer-Encoding", "chunked");
+  res.socket?.setNoDelay(true);
   res.flushHeaders();
 
   const send = (data: object) => {
