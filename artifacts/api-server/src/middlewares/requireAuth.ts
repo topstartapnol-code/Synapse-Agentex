@@ -60,7 +60,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     }
 
     if (userId) {
-      (req as Request & { userId: string }).userId = userId;
+      (req as any).userId = userId;
       next();
       return;
     }
@@ -91,7 +91,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
       return;
     }
 
-    (req as Request & { userId: string }).userId = userId;
+    (req as any).userId = userId;
     next();
   } catch (err) {
     res.status(401).json({ error: "Unauthorized: Expired or invalid token" });

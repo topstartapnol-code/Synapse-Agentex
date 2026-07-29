@@ -1611,7 +1611,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
   };
 
   try {
-    const userId = (req as Request & { userId: string }).userId;
+    const userId = (req as any).userId;
     const [chat] = await db.select().from(chatsTable).where(and(eq(chatsTable.id, chatId), eq(chatsTable.userId, userId)));
     if (!chat) {
       send({ type: "error", content: "Чат не найден" });
