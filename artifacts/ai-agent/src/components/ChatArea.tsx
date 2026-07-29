@@ -11,7 +11,7 @@ import { getListChatsQueryKey } from "@workspace/api-client-react";
 import { useStreamChat } from "@/hooks/use-stream-chat";
 import {
   Send, Paperclip, Copy, Check, Loader2, Zap,
-  FileCode, Terminal, Play, CheckCircle2, X,
+  FileCode, Terminal, Play, CheckCircle2, X, Plus, Sparkles,
   FolderOpen, Search, Globe, File, TestTube2,
   GitCompare, Package, Shield, Plug, Mic, MicOff,
   FileText, ExternalLink, FlaskConical, Eye, MessageCircle
@@ -907,14 +907,12 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                 onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
               />
 
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-800/70 hover:bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700/50 transition-colors"
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800/70 text-zinc-300 text-[11px] font-medium border border-zinc-700/50"
               >
-                <Plus size={11} className="text-zinc-400" />
+                <Sparkles size={11} className="text-zinc-400" />
                 <span>Composer {chat?.model?.split("/")[1] || "2.5 Fast"}</span>
-                <span className="text-[9px] text-zinc-500 ml-0.5">˅</span>
-              </button>
+              </div>
             </div>
 
             <div className="flex items-center gap-1.5">
