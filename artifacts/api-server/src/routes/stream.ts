@@ -1611,8 +1611,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
   };
 
   try {
-    const userId = (req as any).userId;
-    const [chat] = await db.select().from(chatsTable).where(and(eq(chatsTable.id, chatId), eq(chatsTable.userId, userId)));
+    const [chat] = await db.select().from(chatsTable).where(eq(chatsTable.id, chatId));
     if (!chat) {
       send({ type: "error", content: "Чат не найден" });
       res.end();
@@ -1620,6 +1619,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
     }
 
     const chatRoot = path.join(WORKSPACE_ROOT, "chat-workspaces", `chat-${chatId}`);
+    const userId = (req as any).userId || chat.userId;
     const apiKey = await getApiKey(userId);
 
     if (!content?.trim()) {

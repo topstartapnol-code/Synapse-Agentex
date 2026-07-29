@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListMessagesQueryKey, getListChatsQueryKey } from '@workspace/api-client-react';
+import { ensureSupabaseClient } from '@/lib/supabase';
 
 export function useStreamChat(chatId: number | null, onFilesCreated?: () => void) {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -35,10 +36,18 @@ export function useStreamChat(chatId: number | null, onFilesCreated?: () => void
     contentRef.current = '';
 
     try {
+      const client = await ensureSupabaseClient();
+      const { data: { session } } = await client.auth.getSession();
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/chats/${chatId}/stream`, {
         method: 'POST',
         signal: abortCtrl.signal,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           content,
           images: images?.length ? images : undefined,
