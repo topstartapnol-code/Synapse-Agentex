@@ -40,22 +40,27 @@ export function RightPanel({ chatId, fileRefreshKey }: Props) {
   }
 
   return (
-    <div className="w-80 h-full flex flex-col shrink-0" style={{ background: "rgba(0,0,0,0.22)", backdropFilter: "blur(8px)", borderLeft: "1px solid rgba(255,255,255,0.05)" }}>
-      {/* Tab bar */}
-      <div className="flex h-11 shrink-0 items-center px-2 gap-1 mt-1">
-        {(["files", "terminal", "git"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`flex flex-1 h-8 items-center justify-center gap-1.5 text-xs font-medium rounded-xl transition-all ${
-              tab === t ? "bg-primary/15 text-primary" : "text-muted-foreground/50 hover:bg-white/5 hover:text-muted-foreground"
-            }`}>
-            {t === "files" && <><FolderOpen size={12} /> Файлы</>}
-            {t === "terminal" && <><TerminalIcon size={12} /> Терм.</>}
-            {t === "git" && <><GitBranch size={12} /> Git</>}
-          </button>
-        ))}
+    <div className="w-80 h-full flex flex-col shrink-0 backdrop-blur-xl border-l border-white/10" style={{ background: "rgba(0,0,0,0.3)" }}>
+      {/* Tab bar (Cursor / Replit styled) */}
+      <div className="flex h-11 shrink-0 items-center px-2.5 gap-1.5 border-b border-white/5 bg-black/20">
+        {(["files", "terminal", "git"] as const).map(t => {
+          const isActive = tab === t;
+          return (
+            <button key={t} onClick={() => setTab(t)}
+              className={`flex flex-1 h-8 items-center justify-center gap-1.5 text-xs font-semibold rounded-xl transition-all duration-200 ${
+                isActive
+                  ? "bg-gradient-to-r from-orange-500/20 to-amber-500/10 text-orange-400 border border-orange-500/30 shadow-sm"
+                  : "text-muted-foreground/50 hover:bg-white/5 hover:text-white"
+              }`}>
+              {t === "files" && <><FolderOpen size={13} /> Файлы</>}
+              {t === "terminal" && <><TerminalIcon size={13} /> Терминал</>}
+              {t === "git" && <><GitBranch size={13} /> Git</>}
+            </button>
+          );
+        })}
         <button onClick={() => setIsOpen(false)}
-          className="p-1.5 text-muted-foreground/30 hover:text-muted-foreground hover:bg-white/5 rounded-xl transition-all ml-1">
-          <X size={13} />
+          className="p-1.5 text-muted-foreground/40 hover:text-white hover:bg-white/10 rounded-xl transition-all ml-1">
+          <X size={14} />
         </button>
       </div>
 
@@ -238,14 +243,16 @@ function FileExplorer({ chatId, refreshKey }: { chatId: number | null; refreshKe
           </div>
         )}
         {noWorkspace && (
-          <div className="flex flex-col items-center gap-3 mt-12 text-center px-4">
-            <FolderOpen size={28} className="text-muted-foreground/20" />
-            <p className="text-[11px] text-muted-foreground/30 leading-relaxed">
-              Рабочая папка пуста.<br />Попроси агента создать файлы.
+          <div className="flex flex-col items-center justify-center gap-3 mt-16 text-center px-4 py-8 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-md">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500/20 to-amber-500/10 flex items-center justify-center border border-orange-500/20 shadow-lg shadow-orange-500/10">
+              <FolderOpen size={22} className="text-orange-400" />
+            </div>
+            <p className="text-xs text-muted-foreground/60 leading-relaxed font-sans">
+              Рабочая папка пуста.<br />Попроси агента написать код или нажмите ниже:
             </p>
             <button onClick={ensureWorkspace}
-              className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors">
-              <FolderPlus size={11} /> Инициализировать
+              className="flex items-center gap-2 text-xs px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold hover:brightness-110 transition-all shadow-md shadow-orange-500/20 active:scale-95">
+              <FolderPlus size={13} strokeWidth={2.5} /> Инициализировать
             </button>
           </div>
         )}
