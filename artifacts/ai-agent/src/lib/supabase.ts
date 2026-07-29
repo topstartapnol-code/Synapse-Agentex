@@ -1,10 +1,39 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+let currentUrl = import.meta.env.VITE_SUPABASE_URL || "";
+let currentAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Supabase URL or Anon Key is missing. Check your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.");
+export let supabase: SupabaseClient = createClient(
+  currentUrl || "https://placeholder.supabase.co",
+  currentAnonKey || "placeholder"
+);
+
+let isInitialized = false;
+
+export async function ensureSupabaseClient(): Promise<SupabaseClient> {
+  if (isInitialized && currentUrl && currentAnonKey && !currentUrl.includes("placeholder")) {
+    return supabase;
+  }
+
+  // If build-time vars were missing, fetch runtime configuration from /api/config
+  if (!currentUrl || !currentAnonKey || currentUrl.includes("placeholder")) {
+    try {
+      const res = await fetch("/api/config");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.supabaseUrl && data.supabaseAnonKey) {
+          currentUrl = data.supabaseUrl;
+          currentAnonKey = data.supabaseAnonKey;
+          supabase = createClient(currentUrl, currentAnonKey);
+          isInitialized = true;
+          return supabase;
+        }
+      }
+    } catch {
+      /* ignore fetch error */
+    }
+  }
+
+  isInitialized = true;
+  return supabase;
 }
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
