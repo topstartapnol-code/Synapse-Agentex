@@ -1,4 +1,4 @@
-import { Plus, Trash2, Settings, Sun, Moon, PanelLeftClose, PanelLeftOpen, LogOut, MessageSquare, Sparkles } from "lucide-react";
+import { Plus, Trash2, Settings, Sun, Moon, PanelLeftClose, PanelLeftOpen, LogOut, MessageSquare, Terminal, FolderGit2 } from "lucide-react";
 import { useListChats, useCreateChat, useDeleteChat, getListChatsQueryKey, getGetChatQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -64,31 +64,21 @@ export function Sidebar({ activeChatId, onSelectChat }: { activeChatId: number |
     return (
       <>
         <div
-          className="synapse-sidebar-bg flex flex-col items-center py-3.5 gap-3 h-full shrink-0 backdrop-blur-xl"
-          style={{ width: 56, borderRight: "1px solid rgba(255,255,255,0.08)" }}
+          className="bg-[#18181b] flex flex-col items-center py-3 gap-3 h-full shrink-0 border-r border-[#27272a]"
+          style={{ width: 48 }}
         >
-          <div className="flex flex-col items-center gap-1 mb-1">
-            <img
-              src="/synapse-icon.webp"
-              alt="Synapse"
-              className="w-8 h-8 rounded-xl cursor-pointer hover:scale-110 hover:rotate-3 transition-all shadow-md shadow-orange-500/20"
-              onClick={() => setCollapsed(false)}
-              title="Открыть историю чатов"
-            />
-          </div>
-
           <button
             onClick={() => setCollapsed(false)}
-            className="p-2 rounded-xl text-muted-foreground/50 hover:text-primary hover:bg-white/10 transition-all active:scale-95"
-            title="Открыть боковую панель"
+            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            title="Открыть панель"
           >
             <PanelLeftOpen size={16} />
           </button>
 
           <button
             onClick={() => { setCollapsed(false); handleNewChat(); }}
-            className="p-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-bold transition-all shadow-lg shadow-orange-500/25 active:scale-95"
-            title="Новый чат"
+            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition-colors border border-zinc-700/60"
+            title="Новый чат (Ctrl+N)"
           >
             <Plus size={16} />
           </button>
@@ -99,10 +89,10 @@ export function Sidebar({ activeChatId, onSelectChat }: { activeChatId: number |
                 key={chat.id}
                 onClick={() => { onSelectChat(chat.id); setCollapsed(false); }}
                 title={chat.title || "Без названия"}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                className={`w-2 h-2 rounded-full transition-all ${
                   activeChatId === chat.id
-                    ? "bg-gradient-to-r from-orange-400 to-amber-500 scale-150 shadow-sm shadow-orange-500"
-                    : "bg-white/20 hover:bg-white/50"
+                    ? "bg-white scale-125"
+                    : "bg-zinc-700 hover:bg-zinc-500"
                 }`}
               />
             ))}
@@ -110,7 +100,7 @@ export function Sidebar({ activeChatId, onSelectChat }: { activeChatId: number |
 
           <button
             onClick={() => setSettingsOpen(true)}
-            className="p-2 rounded-xl text-muted-foreground/50 hover:text-sidebar-foreground hover:bg-white/10 transition-all active:scale-95"
+            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
             title="Настройки"
           >
             <Settings size={15} />
@@ -127,53 +117,60 @@ export function Sidebar({ activeChatId, onSelectChat }: { activeChatId: number |
     );
   }
 
-  /* ── Expanded state ── */
+  /* ── Expanded state (Cursor / Antigravity Style) ── */
   return (
     <>
       <div
-        className="synapse-sidebar-bg flex flex-col h-full select-none text-sidebar-foreground backdrop-blur-xl"
-        style={{ width: 256, borderRight: "1px solid rgba(255,255,255,0.08)", transition: "width 0.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
+        className="bg-[#18181b] flex flex-col h-full select-none text-zinc-200 border-r border-[#27272a]"
+        style={{ width: 240 }}
       >
-        {/* Header Logo */}
-        <div className="px-3.5 pt-3.5 pb-2.5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <img src="/synapse-icon.webp" alt="Synapse" className="w-7 h-7 rounded-xl shrink-0 shadow-md shadow-orange-500/20" />
-            <span className="synapse-logo-text text-sm font-extrabold tracking-wider uppercase truncate">
-              SYNAPSE AGENT
+        {/* Header */}
+        <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+              S
+            </div>
+            <span className="text-xs font-semibold tracking-tight text-zinc-100">
+              SYNAPSE
             </span>
           </div>
           <button
             onClick={() => setCollapsed(true)}
-            className="p-1.5 rounded-xl text-muted-foreground/40 hover:text-foreground hover:bg-white/10 transition-all shrink-0 active:scale-95"
-            title="Свернуть панель"
+            className="p-1 rounded text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/80 transition-colors"
+            title="Свернуть"
           >
-            <PanelLeftClose size={15} />
+            <PanelLeftClose size={14} />
           </button>
         </div>
 
-        {/* New Chat Button */}
-        <div className="px-3.5 pb-2.5">
+        {/* Action: + New Agent (Cursor style) */}
+        <div className="px-2.5 py-1.5">
           <button
             onClick={handleNewChat}
             disabled={createChat.isPending}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-md shadow-orange-500/20 active:scale-[0.98]"
-            style={{
-              background: "linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(35 100% 50%) 100%)",
-              color: "hsl(222 47% 8%)",
-            }}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-zinc-800/70 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/60 text-xs font-medium transition-all group"
             data-testid="button-new-chat"
           >
-            <Plus size={16} strokeWidth={2.5} />
-            Новый чат
+            <span className="flex items-center gap-2">
+              <Plus size={14} className="text-zinc-400 group-hover:text-zinc-200" />
+              Новый чат
+            </span>
+            <kbd className="text-[10px] text-zinc-500 bg-zinc-900 px-1.5 py-0.5 rounded font-mono">
+              Ctrl+N
+            </kbd>
           </button>
         </div>
 
-        {/* Chat History List */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-1 space-y-1">
+        {/* Section: History List */}
+        <div className="px-3 pt-3 pb-1 text-[11px] font-medium text-zinc-500 tracking-wide uppercase flex items-center justify-between">
+          <span>Чаты</span>
+          <span className="text-[10px] text-zinc-600 font-mono">{chats?.length || 0}</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5">
           {(!chats || chats.length === 0) && (
-            <div className="flex flex-col items-center justify-center text-center text-muted-foreground/60 text-xs py-10 px-4 leading-relaxed gap-2">
-              <Sparkles size={20} className="text-orange-400/50 animate-pulse" />
-              <span>История чатов пуста.<br />Нажмите «Новый чат» для старта.</span>
+            <div className="text-center text-zinc-600 text-xs py-8 px-2 font-sans">
+              Нет чатов
             </div>
           )}
           {chats?.map(chat => {
@@ -182,84 +179,66 @@ export function Sidebar({ activeChatId, onSelectChat }: { activeChatId: number |
               <div
                 key={chat.id}
                 onClick={() => onSelectChat(chat.id)}
-                className={`group relative px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 flex flex-col gap-0.5 ${
+                className={`group relative px-2.5 py-1.5 rounded-md cursor-pointer transition-colors flex items-center justify-between text-xs ${
                   isActive
-                    ? "bg-gradient-to-r from-orange-500/15 to-transparent text-white shadow-sm"
-                    : "hover:bg-white/5 text-muted-foreground hover:text-sidebar-foreground"
+                    ? "bg-zinc-800 text-white font-medium"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
                 }`}
-                style={isActive ? { borderLeft: "3px solid hsl(25 95% 53%)", backdropFilter: "blur(12px)" } : {}}
                 data-testid={`chat-item-${chat.id}`}
               >
-                <div className="flex items-center gap-2 pr-6">
-                  <MessageSquare size={13} className={isActive ? "text-orange-400 shrink-0" : "text-muted-foreground/40 shrink-0"} />
-                  <span className="font-semibold truncate text-xs tracking-wide">{chat.title || "Без названия"}</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] text-muted-foreground/50 pl-5">
-                  <span>{format(new Date(chat.createdAt), "d MMM, HH:mm", { locale: ru })}</span>
-                  <span>{chat.totalTokens.toLocaleString("ru")} тк</span>
+                <div className="flex items-center gap-2 min-w-0 pr-2">
+                  <MessageSquare size={13} className={isActive ? "text-zinc-200 shrink-0" : "text-zinc-600 shrink-0"} />
+                  <span className="truncate">{chat.title || "Без названия"}</span>
                 </div>
                 <button
                   onClick={(e) => handleDelete(e, chat.id)}
-                  className="absolute right-2.5 top-3 opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-red-400 transition-all p-1 rounded-md hover:bg-white/10"
+                  className="opacity-0 group-hover:opacity-100 hover:text-red-400 text-zinc-500 p-0.5 transition-opacity"
                   data-testid={`button-delete-chat-${chat.id}`}
-                  title="Удалить чат"
+                  title="Удалить"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={12} />
                 </button>
               </div>
             );
           })}
         </div>
 
-        {/* Footer Settings & Account */}
-        <div className="p-3 space-y-2 border-t border-white/5 bg-black/20">
+        {/* Footer User Profile (Antigravity/Cursor style) */}
+        <div className="p-2 border-t border-[#27272a] bg-[#18181b] space-y-1">
           {user && (
-            <div
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center shrink-0 text-xs text-slate-950 font-bold shadow-md shadow-orange-500/20">
-                {(user.email?.[0] || "?").toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold truncate text-white">
-                  {user.email?.split("@")[0] || "Пользователь"}
+            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-zinc-900/60 border border-zinc-800 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] text-zinc-300 font-bold shrink-0">
+                  {(user.email?.[0] || "?").toUpperCase()}
                 </div>
-                <div className="text-[10px] text-muted-foreground/50 truncate">
-                  {user.email}
-                </div>
+                <span className="truncate text-zinc-300 font-medium text-[11px]">
+                  {user.email?.split("@")[0] || "User"}
+                </span>
               </div>
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="text-zinc-500 hover:text-zinc-200 p-1 transition-colors"
+                title="Настройки"
+              >
+                <Settings size={13} />
+              </button>
             </div>
           )}
 
-          <div className="rounded-xl overflow-hidden backdrop-blur-md" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-muted-foreground/80 hover:text-white hover:bg-white/5 transition-all text-left"
-              data-testid="button-open-settings"
-            >
-              <Settings size={14} className="shrink-0 text-orange-400" />
-              <span className="text-xs font-semibold">Настройки</span>
-            </button>
-            <div style={{ height: "1px", background: "rgba(255,255,255,0.05)" }} />
+          <div className="flex items-center justify-between px-2 pt-1 text-zinc-500 text-[11px]">
             <button
               onClick={toggle}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-muted-foreground/80 hover:text-white hover:bg-white/5 transition-all text-left"
-              data-testid="button-toggle-theme"
+              className="flex items-center gap-1.5 hover:text-zinc-300 transition-colors"
             >
-              {theme === "dark"
-                ? <><Sun size={14} className="shrink-0 text-amber-400" /><span className="text-xs font-semibold">Светлая тема</span></>
-                : <><Moon size={14} className="shrink-0 text-blue-400" /><span className="text-xs font-semibold">Тёмная тема</span></>
-              }
+              {theme === "dark" ? <Sun size={12} /> : <Moon size={12} />}
+              <span>{theme === "dark" ? "Светлая" : "Тёмная"}</span>
             </button>
-            <div style={{ height: "1px", background: "rgba(255,255,255,0.05)" }} />
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-muted-foreground/80 hover:text-red-400 hover:bg-white/5 transition-all text-left"
-              data-testid="button-sign-out"
+              className="flex items-center gap-1 hover:text-red-400 transition-colors"
             >
-              <LogOut size={14} className="shrink-0" />
-              <span className="text-xs font-semibold">Выйти</span>
+              <LogOut size={12} />
+              <span>Выйти</span>
             </button>
           </div>
         </div>
@@ -274,4 +253,3 @@ export function Sidebar({ activeChatId, onSelectChat }: { activeChatId: number |
     </>
   );
 }
-

@@ -40,27 +40,27 @@ export function RightPanel({ chatId, fileRefreshKey }: Props) {
   }
 
   return (
-    <div className="w-80 h-full flex flex-col shrink-0 backdrop-blur-xl border-l border-white/10" style={{ background: "rgba(0,0,0,0.3)" }}>
-      {/* Tab bar (Cursor / Replit styled) */}
-      <div className="flex h-11 shrink-0 items-center px-2.5 gap-1.5 border-b border-white/5 bg-black/20">
+    <div className="w-80 h-full flex flex-col shrink-0 bg-[#18181b] border-l border-[#27272a]">
+      {/* Tab bar (Antigravity / Cursor style) */}
+      <div className="flex h-9 shrink-0 items-center px-2 gap-1 border-b border-[#27272a] bg-[#18181b]">
         {(["files", "terminal", "git"] as const).map(t => {
           const isActive = tab === t;
           return (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex flex-1 h-8 items-center justify-center gap-1.5 text-xs font-semibold rounded-xl transition-all duration-200 ${
+              className={`flex flex-1 h-7 items-center justify-center gap-1.5 text-[11px] font-medium rounded-md transition-colors ${
                 isActive
-                  ? "bg-gradient-to-r from-orange-500/20 to-amber-500/10 text-orange-400 border border-orange-500/30 shadow-sm"
-                  : "text-muted-foreground/50 hover:bg-white/5 hover:text-white"
+                  ? "bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700/60 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40"
               }`}>
-              {t === "files" && <><FolderOpen size={13} /> Файлы</>}
-              {t === "terminal" && <><TerminalIcon size={13} /> Терминал</>}
-              {t === "git" && <><GitBranch size={13} /> Git</>}
+              {t === "files" && <><FolderOpen size={12} /> Файлы</>}
+              {t === "terminal" && <><TerminalIcon size={12} /> Терминал</>}
+              {t === "git" && <><GitBranch size={12} /> Git</>}
             </button>
           );
         })}
         <button onClick={() => setIsOpen(false)}
-          className="p-1.5 text-muted-foreground/40 hover:text-white hover:bg-white/10 rounded-xl transition-all ml-1">
-          <X size={14} />
+          className="p-1 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded transition-colors ml-1">
+          <X size={13} />
         </button>
       </div>
 
@@ -243,16 +243,14 @@ function FileExplorer({ chatId, refreshKey }: { chatId: number | null; refreshKe
           </div>
         )}
         {noWorkspace && (
-          <div className="flex flex-col items-center justify-center gap-3 mt-16 text-center px-4 py-8 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-md">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500/20 to-amber-500/10 flex items-center justify-center border border-orange-500/20 shadow-lg shadow-orange-500/10">
-              <FolderOpen size={22} className="text-orange-400" />
-            </div>
-            <p className="text-xs text-muted-foreground/60 leading-relaxed font-sans">
-              Рабочая папка пуста.<br />Попроси агента написать код или нажмите ниже:
+          <div className="flex flex-col items-center justify-center gap-2.5 mt-16 text-center px-4 py-8 rounded-lg bg-zinc-900/50 border border-zinc-800">
+            <FolderOpen size={20} className="text-zinc-500" />
+            <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+              Рабочая папка пуста
             </p>
             <button onClick={ensureWorkspace}
-              className="flex items-center gap-2 text-xs px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold hover:brightness-110 transition-all shadow-md shadow-orange-500/20 active:scale-95">
-              <FolderPlus size={13} strokeWidth={2.5} /> Инициализировать
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium border border-zinc-700 transition-colors">
+              <FolderPlus size={13} /> Инициализировать
             </button>
           </div>
         )}

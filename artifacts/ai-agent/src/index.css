@@ -69,97 +69,86 @@
 }
 
 /* ── DARK (default) ── */
+/* ── DARK (default Cursor/Antigravity style) ── */
 :root, .dark {
-  --background: 222 47% 8%;
-  --foreground: 210 20% 90%;
-  --border: 220 30% 18%;
-  --card: 220 40% 11%;
-  --card-foreground: 210 20% 90%;
-  --card-border: 220 30% 18%;
-  --sidebar: 222 45% 6%;
-  --sidebar-foreground: 210 18% 85%;
-  --sidebar-border: 220 30% 15%;
-  --sidebar-primary: 25 95% 53%;
-  --sidebar-primary-foreground: 222 47% 8%;
-  --sidebar-accent: 213 94% 60%;
-  --sidebar-accent-foreground: 210 20% 90%;
-  --sidebar-ring: 25 95% 53%;
-  --popover: 220 40% 11%;
-  --popover-foreground: 210 20% 90%;
-  --popover-border: 220 30% 18%;
-  --primary: 25 95% 53%;
-  --primary-foreground: 222 47% 8%;
-  --secondary: 220 35% 14%;
-  --secondary-foreground: 210 20% 80%;
-  --muted: 220 30% 16%;
-  --muted-foreground: 210 15% 55%;
-  --accent: 213 94% 60%;
-  --accent-foreground: 222 47% 8%;
+  --background: 240 6% 10%;
+  --foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --card: 240 6% 12%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 240 4% 16%;
+  --sidebar: 240 6% 8%;
+  --sidebar-foreground: 240 5% 84%;
+  --sidebar-border: 240 4% 16%;
+  --sidebar-primary: 0 0% 98%;
+  --sidebar-primary-foreground: 240 6% 10%;
+  --sidebar-accent: 240 4% 16%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-ring: 0 0% 98%;
+  --popover: 240 6% 12%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 240 4% 16%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 6% 10%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 240 4% 18%;
+  --accent-foreground: 0 0% 98%;
   --destructive: 0 72% 51%;
-  --destructive-foreground: 210 20% 90%;
-  --input: 220 35% 13%;
-  --ring: 25 95% 53%;
-  --app-font-sans: 'Inter', sans-serif;
+  --destructive-foreground: 0 0% 98%;
+  --input: 240 4% 16%;
+  --ring: 0 0% 98%;
+  --app-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: 'JetBrains Mono', monospace;
-  --radius: 0.75rem;
+  --radius: 0.625rem;
   --opaque-button-border-intensity: 9;
-  --button-outline: rgba(255,255,255,.10);
+  --button-outline: rgba(255,255,255,.08);
   --badge-outline: rgba(255,255,255,.05);
-  --elevate-1: rgba(255,255,255,.04);
-  --elevate-2: rgba(255,255,255,.09);
-  --primary-border: hsl(25 95% 53%);
-  --secondary-border: hsl(220 35% 14%);
-  --muted-border: hsl(220 30% 16%);
-  --accent-border: hsl(213 94% 60%);
+  --elevate-1: rgba(255,255,255,.03);
+  --elevate-2: rgba(255,255,255,.06);
+  --primary-border: hsl(0 0% 98%);
+  --secondary-border: hsl(240 4% 16%);
+  --muted-border: hsl(240 4% 16%);
+  --accent-border: hsl(240 4% 18%);
   --destructive-border: hsl(0 72% 51%);
-  --sidebar-primary-border: hsl(25 95% 53%);
-  --sidebar-accent-border: hsl(213 94% 60%);
+  --sidebar-primary-border: hsl(0 0% 98%);
+  --sidebar-accent-border: hsl(240 4% 18%);
 }
 
 /* ── LIGHT ── */
 .light {
-  --background: 210 30% 96%;
-  --foreground: 222 47% 12%;
-  --border: 220 20% 82%;
+  --background: 0 0% 98%;
+  --foreground: 240 6% 10%;
+  --border: 240 6% 90%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 12%;
-  --card-border: 220 20% 85%;
-  --sidebar: 220 25% 93%;
-  --sidebar-foreground: 222 40% 18%;
-  --sidebar-border: 220 20% 80%;
-  --sidebar-primary: 25 95% 50%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 213 90% 52%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 25 95% 50%;
+  --card-foreground: 240 6% 10%;
+  --card-border: 240 6% 90%;
+  --sidebar: 240 5% 96%;
+  --sidebar-foreground: 240 6% 15%;
+  --sidebar-border: 240 6% 90%;
+  --sidebar-primary: 240 6% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 5% 92%;
+  --sidebar-accent-foreground: 240 6% 10%;
+  --sidebar-ring: 240 6% 10%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 12%;
-  --popover-border: 220 20% 82%;
-  --primary: 25 95% 50%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 220 20% 90%;
-  --secondary-foreground: 222 40% 20%;
-  --muted: 220 20% 88%;
-  --muted-foreground: 222 20% 45%;
-  --accent: 213 90% 52%;
-  --accent-foreground: 0 0% 100%;
+  --popover-foreground: 240 6% 10%;
+  --popover-border: 240 6% 90%;
+  --primary: 240 6% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 5% 92%;
+  --secondary-foreground: 240 6% 10%;
+  --muted: 240 5% 92%;
+  --muted-foreground: 240 4% 45%;
+  --accent: 240 5% 90%;
+  --accent-foreground: 240 6% 10%;
   --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --input: 220 20% 94%;
-  --ring: 25 95% 50%;
-  --opaque-button-border-intensity: -8;
-  --button-outline: rgba(0,0,0,.10);
-  --badge-outline: rgba(0,0,0,.05);
-  --elevate-1: rgba(0,0,0,.03);
-  --elevate-2: rgba(0,0,0,.08);
-  --primary-border: hsl(25 95% 50%);
-  --secondary-border: hsl(220 20% 90%);
-  --muted-border: hsl(220 20% 88%);
-  --accent-border: hsl(213 90% 52%);
-  --destructive-border: hsl(0 72% 51%);
-  --sidebar-primary-border: hsl(25 95% 50%);
-  --sidebar-accent-border: hsl(213 90% 52%);
+  --destructive-foreground: 0 0% 98%;
+  --input: 240 6% 92%;
+  --ring: 240 6% 10%;
 }
 
 @layer base {
@@ -167,54 +156,21 @@
   body { @apply font-sans antialiased bg-background text-foreground; }
 }
 
-/* ── SHIMMER BG ── */
-@keyframes synapse-shimmer {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes text-shimmer {
-  0%   { background-position: 0% center; }
-  100% { background-position: 200% center; }
-}
-
 .synapse-bg {
-  background: linear-gradient(135deg,
-    hsl(222 47% 8%) 0%, hsl(213 60% 11%) 25%,
-    hsl(25 40% 10%) 50%, hsl(213 60% 11%) 75%, hsl(222 47% 8%) 100%);
-  background-size: 400% 400%;
-  animation: synapse-shimmer 8s ease infinite;
+  background: #09090b;
 }
 .light .synapse-bg {
-  background: linear-gradient(135deg,
-    hsl(210 30% 96%) 0%, hsl(213 40% 93%) 25%,
-    hsl(25 30% 95%) 50%, hsl(213 40% 93%) 75%, hsl(210 30% 96%) 100%);
-  background-size: 400% 400%;
-  animation: synapse-shimmer 8s ease infinite;
+  background: #fafafa;
 }
 .synapse-sidebar-bg {
-  background: linear-gradient(160deg,
-    hsl(222 50% 6%) 0%, hsl(213 55% 8%) 40%,
-    hsl(25 35% 8%) 70%, hsl(222 50% 6%) 100%);
-  background-size: 300% 300%;
-  animation: synapse-shimmer 10s ease infinite;
+  background: #18181b;
 }
 .light .synapse-sidebar-bg {
-  background: linear-gradient(160deg,
-    hsl(220 28% 91%) 0%, hsl(213 35% 89%) 40%,
-    hsl(25 25% 92%) 70%, hsl(220 28% 91%) 100%);
-  background-size: 300% 300%;
-  animation: synapse-shimmer 10s ease infinite;
+  background: #f4f4f5;
 }
 .synapse-logo-text {
-  background: linear-gradient(90deg,
-    hsl(25 95% 58%) 0%, hsl(213 94% 68%) 35%,
-    hsl(25 95% 58%) 70%, hsl(213 94% 68%) 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: text-shimmer 3s linear infinite;
+  color: #f4f4f5;
+  font-weight: 700;
 }
 
 /* ── OCTOPUS SWIM ── */

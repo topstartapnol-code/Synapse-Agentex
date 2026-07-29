@@ -832,9 +832,9 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
           </div>
         )}
 
-        {/* Mode + thinking selectors (Cursor / Replit styled segmented controls) */}
-        <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/10 backdrop-blur-md shrink-0">
+        {/* Mode + thinking selectors (Antigravity / Cursor style) */}
+        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap text-xs">
+          <div className="flex items-center bg-[#18181b] border border-[#27272a] rounded-lg p-0.5">
             {MODES.map((m) => {
               const isActive = agentMode === m.id;
               return (
@@ -842,14 +842,10 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                   key={m.id}
                   onClick={() => setAgentMode(m.id)}
                   title={m.title}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                     isActive
-                      ? m.id === "build"
-                        ? "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold shadow-md shadow-orange-500/20"
-                        : m.id === "plan"
-                        ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
-                        : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold shadow-md shadow-purple-500/20"
-                      : "text-muted-foreground/60 hover:text-white hover:bg-white/5"
+                      ? "bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60 font-semibold"
+                      : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
                   {m.label}
@@ -858,7 +854,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
             })}
           </div>
 
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/10 backdrop-blur-md shrink-0 overflow-x-auto">
+          <div className="flex items-center bg-[#18181b] border border-[#27272a] rounded-lg p-0.5">
             {THINKING_LEVELS.map((t) => {
               const isActive = thinkingLevel === t.id;
               return (
@@ -866,18 +862,10 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                   key={t.id}
                   onClick={() => setThinkingLevel(t.id)}
                   title={t.title}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-200 ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                     isActive
-                      ? t.id === "t1"
-                        ? "bg-teal-500/25 text-teal-300 border border-teal-500/40 shadow-sm"
-                        : t.id === "t2"
-                        ? "bg-purple-500/25 text-purple-300 border border-purple-500/40 shadow-sm"
-                        : t.id === "t3"
-                        ? "bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm"
-                        : t.id === "t4"
-                        ? "bg-pink-500/25 text-pink-300 border border-pink-500/40 shadow-sm"
-                        : "bg-white/15 text-white font-bold"
-                      : "text-muted-foreground/50 hover:text-white hover:bg-white/5"
+                      ? "bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60 font-semibold"
+                      : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
                   {t.label}
@@ -887,70 +875,82 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
           </div>
         </div>
 
-        {/* Floating Cursor/Replit Prompt Bar */}
-        <div className="relative flex items-center bg-black/40 border border-white/10 rounded-2xl backdrop-blur-xl focus-within:border-orange-500/40 focus-within:ring-2 focus-within:ring-orange-500/10 transition-all duration-300 shadow-xl">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className={`shrink-0 ml-3 p-2 transition-all rounded-xl ${(attachedImages.length + attachedFiles.length) > 0 ? "text-orange-400 bg-orange-500/10" : "text-muted-foreground/50 hover:text-white hover:bg-white/5"}`}
-            title="Прикрепить файл (картинки, код, текст)"
-          >
-            <Paperclip size={16} />
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept="image/*,.py,.ts,.tsx,.js,.jsx,.json,.yaml,.yml,.toml,.txt,.md,.html,.css,.sh,.env,.conf,.ini,.rs,.go,.rb,.php,.java,.c,.cpp,.h"
-            multiple
-            onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
-          />
-
+        {/* Antigravity / Cursor IDE Composer Prompt Box */}
+        <div className="relative flex flex-col bg-[#18181b] border border-[#27272a] rounded-xl focus-within:border-zinc-500/50 transition-colors shadow-sm overflow-hidden">
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Слушаю..." : "Спросить SYNAPSE AGENT..."}
+            placeholder={isListening ? "Слушаю..." : "Plan, Build, / for skills, @ for context..."}
             disabled={isStreaming}
-            className="flex-1 bg-transparent border-none outline-none px-3 py-3.5 text-sm text-foreground placeholder:text-muted-foreground/40 resize-none min-h-[52px] max-h-[180px] font-sans disabled:opacity-50"
+            className="w-full bg-transparent border-none outline-none px-3.5 pt-3 pb-2 text-xs text-zinc-100 placeholder:text-zinc-500 resize-none min-h-[48px] max-h-[160px] font-sans disabled:opacity-50"
             rows={1}
             style={{ fieldSizing: "content" } as React.CSSProperties}
             data-testid="input-message"
           />
 
-          <button
-            onClick={toggleVoice}
-            className={`shrink-0 p-2 transition-all rounded-xl mr-1 ${isListening ? "text-red-400 animate-pulse bg-red-500/10" : "text-muted-foreground/50 hover:text-white hover:bg-white/5"}`}
-            title={isListening ? "Остановить запись" : "Голосовой ввод (ru)"}
-          >
-            {isListening ? <MicOff size={15} /> : <Mic size={15} />}
-          </button>
+          <div className="flex items-center justify-between px-2.5 pb-2 pt-1 border-t border-zinc-800/40">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-1.5 rounded-md transition-colors text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 ${(attachedImages.length + attachedFiles.length) > 0 ? "text-zinc-200 bg-zinc-800" : ""}`}
+                title="Прикрепить файл"
+              >
+                <Paperclip size={14} />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*,.py,.ts,.tsx,.js,.jsx,.json,.yaml,.yml,.toml,.txt,.md,.html,.css,.sh,.env,.conf,.ini,.rs,.go,.rb,.php,.java,.c,.cpp,.h"
+                multiple
+                onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
+              />
 
-          {isStreaming ? (
-            <button
-              onClick={cancelStream}
-              className="shrink-0 mr-3 p-2.5 rounded-xl transition-all text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-400/50 hover:bg-red-500/10 active:scale-95"
-              title="Остановить генерацию"
-            >
-              <X size={15} />
-            </button>
-          ) : (
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() && attachedImages.length === 0 && attachedFiles.length === 0}
-              className="shrink-0 mr-3 p-2.5 bg-gradient-to-r from-orange-500 to-amber-500 disabled:from-white/10 disabled:to-white/10 text-slate-950 disabled:text-white/30 rounded-xl transition-all hover:brightness-110 shadow-md shadow-orange-500/20 disabled:shadow-none disabled:cursor-not-allowed active:scale-95"
-              data-testid="button-send"
-            >
-              <Send size={15} strokeWidth={2.5} />
-            </button>
-          )}
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-800/70 hover:bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700/50 transition-colors"
+              >
+                <Plus size={11} className="text-zinc-400" />
+                <span>Composer {chat?.model?.split("/")[1] || "2.5 Fast"}</span>
+                <span className="text-[9px] text-zinc-500 ml-0.5">˅</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={toggleVoice}
+                className={`p-1.5 transition-all rounded-md ${isListening ? "text-red-400 animate-pulse bg-red-500/10" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"}`}
+                title={isListening ? "Остановить запись" : "Голосовой ввод"}
+              >
+                {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+              </button>
+
+              {isStreaming ? (
+                <button
+                  onClick={cancelStream}
+                  className="p-1.5 rounded-md transition-all text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20"
+                  title="Остановить"
+                >
+                  <X size={14} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() && attachedImages.length === 0 && attachedFiles.length === 0}
+                  className="p-1.5 bg-zinc-200 hover:bg-white disabled:bg-zinc-800 text-zinc-900 disabled:text-zinc-600 rounded-md transition-colors disabled:cursor-not-allowed"
+                  data-testid="button-send"
+                >
+                  <Send size={13} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Bottom stats */}
-        <div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/40 font-mono">
-          <span className="flex items-center gap-1.5"><Zap size={10} className="text-orange-400" />{(chat?.totalTokens || 0).toLocaleString("ru")} токенов</span>
-          <span>{chat?.messageCount || 0} сообщений</span>
-          <span className="text-orange-400/80 font-bold">{chat?.model?.split("/")[1] || "gemini-2.0-flash"}</span>
-          <span className="opacity-60">⌘Enter · 🎤 голос · 📎 файлы</span>
+        {/* Bottom shortcut hint */}
+        <div className="mt-1.5 flex items-center justify-center gap-3 text-[10px] text-zinc-500 font-mono">
+          <span>⌘Enter · 🎤 голос · 📎 файлы</span>
         </div>
       </div>
     </div>
