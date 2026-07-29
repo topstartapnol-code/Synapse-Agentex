@@ -4,7 +4,7 @@ import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { db, chatsTable, messagesTable, settingsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const execAsync = promisify(exec);
@@ -1516,9 +1516,13 @@ async function executeTools(
   return { hasTools, toolResults, statusMessages };
 }
 
-async function getApiKey(): Promise<string | null> {
+async function getApiKey(userId?: string): Promise<string | null> {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
   try {
+    if (userId) {
+      const userRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `openrouter_key_${userId}`));
+      if (userRow[0]?.value) return userRow[0].value;
+    }
     const rows = await db.select().from(settingsTable).where(eq(settingsTable.key, "openrouter_key"));
     return rows[0]?.value || null;
   } catch {
@@ -1607,7 +1611,8 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
   };
 
   try {
-    const [chat] = await db.select().from(chatsTable).where(eq(chatsTable.id, chatId));
+    const userId = (req as Request & { userId: string }).userId;
+    const [chat] = await db.select().from(chatsTable).where(and(eq(chatsTable.id, chatId), eq(chatsTable.userId, userId)));
     if (!chat) {
       send({ type: "error", content: "Чат не найден" });
       res.end();
@@ -1615,7 +1620,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
     }
 
     const chatRoot = path.join(WORKSPACE_ROOT, "chat-workspaces", `chat-${chatId}`);
-    const apiKey = await getApiKey();
+    const apiKey = await getApiKey(userId);
 
     if (!content?.trim()) {
       send({ type: "error", content: "Сообщение не может быть пустым" });

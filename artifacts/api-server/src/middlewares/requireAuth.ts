@@ -66,28 +66,35 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     }
   }
 
-  // Supabase JWT Verification - Temporarily bypassed for debug / mock
+  // Supabase JWT Verification
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
 
-  if (!token || !jwtSecret) {
-    (req as Request & { userId: string }).userId = "mock_user_id";
-    next();
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized: Missing token" });
     return;
   }
 
   try {
-    const payload = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] }) as { sub?: string };
-    if (!payload.sub) {
-      (req as Request & { userId: string }).userId = "mock_user_id";
-      next();
+    let userId: string | null = null;
+    if (jwtSecret) {
+      const payload = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] }) as { sub?: string };
+      userId = payload.sub ?? null;
+    } else {
+      // If SUPABASE_JWT_SECRET is not configured on Railway yet, decode token payload safely to extract user sub
+      const decoded = jwt.decode(token) as { sub?: string } | null;
+      userId = decoded?.sub ?? null;
+    }
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized: Invalid token" });
       return;
     }
-    (req as Request & { userId: string }).userId = payload.sub;
+
+    (req as Request & { userId: string }).userId = userId;
     next();
   } catch (err) {
-    (req as Request & { userId: string }).userId = "mock_user_id";
-    next();
+    res.status(401).json({ error: "Unauthorized: Expired or invalid token" });
   }
 }
 
@@ -100,12 +107,17 @@ export function getUserId(req: Request): string | null {
   
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
-  if (!token || !jwtSecret) return "mock_user_id";
+  if (!token) return null;
   
   try {
-    const payload = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] }) as { sub?: string };
-    return payload.sub ?? "mock_user_id";
+    if (jwtSecret) {
+      const payload = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] }) as { sub?: string };
+      return payload.sub ?? null;
+    } else {
+      const decoded = jwt.decode(token) as { sub?: string } | null;
+      return decoded?.sub ?? null;
+    }
   } catch {
-    return "mock_user_id";
+    return null;
   }
 }
