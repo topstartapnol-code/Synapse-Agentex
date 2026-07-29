@@ -89,52 +89,85 @@ router.delete("/bot-token", requireAuth, async (req, res) => {
 router.post("/bot-task", async (req, res) => {
   if (!checkBotSecret(req, res)) return;
 
-  const { token, task, chatId } = req.body as { token?: string; task?: string; chatId?: number };
+    const { token, task, chatId, imageUrl, mediaUrl, images } = req.body as {
+      token?: string;
+      task?: string;
+      chatId?: number;
+      imageUrl?: string;
+      mediaUrl?: string;
+      images?: string[];
+    };
 
-  if (!token || !task) {
-    res.status(400).json({ error: "token and task are required" });
-    return;
-  }
-
-  try {
-    // Resolve userId from token
-    const tokenRows = await db.select().from(botTokensTable).where(eq(botTokensTable.token, token));
-    if (!tokenRows.length) {
-      res.status(401).json({ error: "Invalid token. Use /connect in the bot to get a token, then save it in SYNAPSE AGENT settings." });
+    if (!token || (!task && !imageUrl && !mediaUrl && (!images || !images.length))) {
+      res.status(400).json({ error: "token and task or media are required" });
       return;
     }
-    const { userId } = tokenRows[0];
 
-    // Get API key and model
-    const apiKey = await getOpenRouterKey(userId);
-    if (!apiKey) {
-      res.status(422).json({ error: "No OpenRouter API key configured for this user. Please add it in SYNAPSE AGENT settings." });
-      return;
-    }
-    const model = await getModel(userId);
+    try {
+      // Resolve userId from token
+      const tokenRows = await db.select().from(botTokensTable).where(eq(botTokensTable.token, token));
+      if (!tokenRows.length) {
+        res.status(401).json({ error: "Invalid token. Use /connect in the bot to get a token, then save it in SYNAPSE AGENT settings." });
+        return;
+      }
+      const { userId } = tokenRows[0];
 
-    // Call OpenRouter (non-streaming)
-    const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://agentsynapse.replit.app",
-        "X-Title": "SYNAPSE AGENT",
-      },
-      body: JSON.stringify({
-        model,
-        stream: false,
-        messages: [
-          {
-            role: "system",
-            content: "You are SYNAPSE AGENT, an expert AI assistant. Answer concisely and helpfully. If the task involves code, provide complete, working code. Keep your response under 3000 characters when possible.",
-          },
-          { role: "user", content: task },
-        ],
-        max_tokens: 2000,
-      }),
-    });
+      // Get API key and model
+      const apiKey = await getOpenRouterKey(userId);
+      if (!apiKey) {
+        res.status(422).json({ error: "No OpenRouter API key configured for this user. Please add it in SYNAPSE AGENT settings." });
+        return;
+      }
+      const model = await getModel(userId);
+
+      // Collect all media URLs
+      const mediaList: string[] = [];
+      if (imageUrl) mediaList.push(imageUrl);
+      if (mediaUrl) mediaList.push(mediaUrl);
+      if (images && Array.isArray(images)) mediaList.push(...images);
+
+      type TextPart = { type: "text"; text: string };
+      type ImagePart = { type: "image_url"; image_url: { url: string } };
+      type ContentPart = TextPart | ImagePart;
+
+      let userContent: string | ContentPart[];
+
+      if (mediaList.length > 0) {
+        const parts: ContentPart[] = mediaList.map(url => ({
+          type: "image_url",
+          image_url: { url },
+        }));
+        parts.push({
+          type: "text",
+          text: task?.trim() || "Опиши и проанализируй это медиа / видео / фото.",
+        });
+        userContent = parts;
+      } else {
+        userContent = task?.trim() || "";
+      }
+
+      // Call OpenRouter (non-streaming)
+      const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://agentsynapse.replit.app",
+          "X-Title": "SYNAPSE AGENT",
+        },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          messages: [
+            {
+              role: "system",
+              content: "You are SYNAPSE AGENT, an expert AI assistant with full vision and multimodal capabilities. You CAN see and analyze images, photos, video frames, diagrams, and code screenshots sent by the user. If media is attached, describe it in detail and answer the user's question directly. Keep your response under 3000 characters when possible.",
+            },
+            { role: "user", content: userContent },
+          ],
+          max_tokens: 2000,
+        }),
+      });
 
     if (!orRes.ok) {
       const errText = await orRes.text();
