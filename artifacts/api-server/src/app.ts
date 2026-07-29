@@ -35,12 +35,19 @@ app.use("/api", router);
 
 if (process.env.NODE_ENV === "production") {
   const publicPath = path.resolve(__dirname, "../../ai-agent/dist/public");
-  app.use(express.static(publicPath));
+  app.use(express.static(publicPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".html")) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      }
+    }
+  }));
 
   app.get("{*splat}", (req, res, next) => {
     if (req.path.startsWith("/api")) {
       return next();
     }
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.join(publicPath, "index.html"));
   });
 }

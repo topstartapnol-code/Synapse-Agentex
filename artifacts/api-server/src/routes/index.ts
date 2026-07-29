@@ -19,4 +19,11 @@ router.use(settingsRouter);
 router.use(modelsRouter);
 router.use(botRouter);
 
+router.get("/config", (_req, res) => {
+  res.json({
+    supabaseUrl: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "",
+    supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "",
+  });
+});
+
 export default router;
