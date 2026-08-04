@@ -28,8 +28,20 @@ export function Sidebar({ activeChatId, onSelectChat }: { activeChatId: number |
       .catch(() => {});
   }, []);
 
-  const handleNewChat = () => {
-    createChat.mutate({ data: { title: "Новый чат", model: defaultModel } }, {
+  const handleNewChat = async () => {
+    let modelToUse = defaultModel;
+    try {
+      const r = await fetch("/api/settings");
+      if (r.ok) {
+        const d = await r.json();
+        if (d.default_model) {
+          modelToUse = d.default_model;
+          setDefaultModel(d.default_model);
+        }
+      }
+    } catch {}
+
+    createChat.mutate({ data: { title: "Новый чат", model: modelToUse } }, {
       onSuccess: (chat) => {
         onSelectChat(chat.id);
         queryClient.invalidateQueries({ queryKey: getListChatsQueryKey() });

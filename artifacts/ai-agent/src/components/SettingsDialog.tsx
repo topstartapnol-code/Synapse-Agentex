@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Key, Cpu, Eye, EyeOff, Save, CheckCircle } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getGetChatQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
 
 interface Settings {
   openrouterKey: string;
@@ -19,6 +21,7 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [keyStored, setKeyStored] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open) {
@@ -55,8 +58,10 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ model: settings.defaultModel }),
         });
+        queryClient.invalidateQueries({ queryKey: getGetChatQueryKey(activeChatId) });
       }
 
+      queryClient.invalidateQueries({ queryKey: getListChatsQueryKey() });
       onModelSaved?.(settings.defaultModel);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -74,7 +79,7 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
       <div className="relative z-10 w-full max-w-lg mx-4">
         <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden shadow-2xl text-zinc-200 font-sans">
 
-          {/* Header (Cursor/Antigravity style) */}
+          {/* Header */}
           <div className="px-5 py-4 border-b border-[#27272a] bg-[#18181b] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-5 h-5 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
@@ -150,6 +155,7 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
                   "openai/gpt-4o",
                   "google/gemini-2.0-flash-001",
                   "deepseek/deepseek-r1",
+                  "qwen/qwen3.7-flash",
                 ].map(m => (
                   <button key={m} onClick={() => setSettings(s => ({ ...s, defaultModel: m }))}
                     className={`text-left px-2.5 py-1.5 rounded-md text-[11px] font-mono truncate transition-colors border ${

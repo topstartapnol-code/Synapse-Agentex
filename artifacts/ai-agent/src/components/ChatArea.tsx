@@ -588,6 +588,21 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
 
   const [input, setInput] = useState("");
   const [showCompletion, setShowCompletion] = useState(false);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+
+  const handleSelectModel = async (newModel: string) => {
+    if (!chatId) return;
+    setModelMenuOpen(false);
+    try {
+      await fetch(`/api/chats/${chatId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: newModel }),
+      });
+      queryClient.invalidateQueries({ queryKey: getGetChatQueryKey(chatId) });
+      queryClient.invalidateQueries({ queryKey: getListChatsQueryKey() });
+    } catch {}
+  };
   const [attachedImages, setAttachedImages] = useState<{ name: string; dataUrl: string }[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; content: string }[]>([]);
   const [isListening, setIsListening] = useState(false);
@@ -907,11 +922,43 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                 onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
               />
 
-              <div
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800/70 text-zinc-300 text-[11px] font-medium border border-zinc-700/50"
-              >
-                <Sparkles size={11} className="text-zinc-400" />
-                <span>Composer {chat?.model?.split("/")[1] || "2.5 Fast"}</span>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setModelMenuOpen(v => !v)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[11px] font-medium border border-zinc-700/60 transition-colors"
+                  title="Сменить модель"
+                >
+                  <Sparkles size={11} className="text-zinc-400" />
+                  <span>Composer {chat?.model?.split("/")[1] || "2.5 Fast"}</span>
+                  <span className="text-[9px] text-zinc-500 ml-0.5">˅</span>
+                </button>
+
+                {modelMenuOpen && (
+                  <div className="absolute bottom-full mb-1 left-0 z-30 w-56 bg-[#18181b] border border-[#27272a] rounded-lg shadow-xl py-1 text-xs">
+                    <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-zinc-500 border-b border-zinc-800">
+                      Выбор модели
+                    </div>
+                    {[
+                      { id: "qwen/qwen3.7-flash", label: "qwen3.7-flash" },
+                      { id: "anthropic/claude-3.5-sonnet", label: "claude-3.5-sonnet" },
+                      { id: "openai/gpt-4o", label: "gpt-4o" },
+                      { id: "google/gemini-2.0-flash-001", label: "gemini-2.0-flash-001" },
+                      { id: "deepseek/deepseek-r1", label: "deepseek-r1" },
+                    ].map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => handleSelectModel(m.id)}
+                        className={`w-full text-left px-2.5 py-1.5 hover:bg-zinc-800 flex items-center justify-between text-[11px] font-mono ${
+                          chat?.model === m.id ? "text-white font-bold bg-zinc-800/50" : "text-zinc-400"
+                        }`}
+                      >
+                        <span>{m.label}</span>
+                        {chat?.model === m.id && <span className="text-emerald-400 text-xs">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
