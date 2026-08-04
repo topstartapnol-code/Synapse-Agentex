@@ -7,30 +7,14 @@ const router = Router();
 
 router.get("/settings", requireAuth, async (req, res) => {
   try {
-    const userId = (req as typeof req & { userId: string }).userId;
-    const rows = await db.select().from(settingsTable);
-    const result: Record<string, string> = {};
+    const userId = (req as any).userId;
+    const keyRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `openrouter_key_${userId}`));
+    const modelRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `default_model_${userId}`));
 
-    // Base defaults
-    for (const row of rows) {
-      if (!row.key.includes("_")) {
-        result[row.key] = row.value;
-      }
-    }
-
-    // User-specific overrides
-    const suffix = `_${userId}`;
-    for (const row of rows) {
-      if (row.key.endsWith(suffix)) {
-        const baseKey = row.key.slice(0, -suffix.length);
-        result[baseKey] = row.value;
-      }
-    }
-
-    // Mask sensitive keys
-    if (result["openrouter_key"]) {
-      result["openrouter_key"] = "***stored***";
-    }
+    const result: Record<string, string> = {
+      openrouter_key: keyRow[0]?.value ? "***stored***" : "",
+      default_model: modelRow[0]?.value || "anthropic/claude-3.5-sonnet",
+    };
 
     res.json(result);
   } catch (err) {
@@ -41,18 +25,14 @@ router.get("/settings", requireAuth, async (req, res) => {
 
 router.get("/settings/raw", requireAuth, async (req, res) => {
   try {
-    const userId = (req as typeof req & { userId: string }).userId;
-    const rows = await db.select().from(settingsTable);
-    const result: Record<string, string> = {};
+    const userId = (req as any).userId;
+    const keyRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `openrouter_key_${userId}`));
+    const modelRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `default_model_${userId}`));
 
-    const suffix = `_${userId}`;
-    for (const row of rows) {
-      if (row.key.endsWith(suffix)) {
-        const baseKey = row.key.slice(0, -suffix.length);
-        result[baseKey] = row.value;
-      }
-    }
-    res.json(result);
+    res.json({
+      openrouter_key: keyRow[0]?.value || "",
+      default_model: modelRow[0]?.value || "anthropic/claude-3.5-sonnet",
+    });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to load settings" });
@@ -61,7 +41,7 @@ router.get("/settings/raw", requireAuth, async (req, res) => {
 
 router.post("/settings", requireAuth, async (req, res) => {
   try {
-    const userId = (req as typeof req & { userId: string }).userId;
+    const userId = (req as any).userId;
     const entries = req.body as Record<string, string>;
 
     for (const [key, value] of Object.entries(entries)) {

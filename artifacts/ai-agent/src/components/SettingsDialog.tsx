@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Key, Cpu, Eye, EyeOff, Save, CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetChatQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
+import { ensureSupabaseClient } from "@/lib/supabase";
 
 interface Settings {
   openrouterKey: string;
@@ -25,37 +26,54 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
 
   useEffect(() => {
     if (open) {
-      fetch("/api/settings")
-        .then(r => r.json())
-        .then((data: Record<string, string>) => {
-          const stored = data.openrouter_key === "***stored***";
-          setKeyStored(stored);
-          setSettings({
-            openrouterKey: stored ? "" : (data.openrouter_key || ""),
-            defaultModel: data.default_model || "anthropic/claude-3.5-sonnet",
-          });
-        })
-        .catch(() => {});
+      (async () => {
+        try {
+          const client = await ensureSupabaseClient();
+          const { data: { session } } = await client.auth.getSession();
+          const headers: Record<string, string> = {};
+          if (session?.access_token) {
+            headers["Authorization"] = `Bearer ${session.access_token}`;
+          }
+
+          const r = await fetch("/api/settings", { headers });
+          if (r.ok) {
+            const data: Record<string, string> = await r.json();
+            const stored = data.openrouter_key === "***stored***";
+            setKeyStored(stored);
+            setSettings({
+              openrouterKey: stored ? "" : (data.openrouter_key || ""),
+              defaultModel: data.default_model || "anthropic/claude-3.5-sonnet",
+            });
+          }
+        } catch {}
+      })();
     }
   }, [open]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      const client = await ensureSupabaseClient();
+      const { data: { session } } = await client.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
       const body: Record<string, string> = { default_model: settings.defaultModel };
       if (settings.openrouterKey.trim()) {
         body.openrouter_key = settings.openrouterKey.trim();
       }
       await fetch("/api/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(body),
       });
 
       if (activeChatId) {
         await fetch(`/api/chats/${activeChatId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ model: settings.defaultModel }),
         });
         queryClient.invalidateQueries({ queryKey: getGetChatQueryKey(activeChatId) });
