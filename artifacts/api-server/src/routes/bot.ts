@@ -146,8 +146,11 @@ router.post("/bot-task", async (req, res) => {
         userContent = task?.trim() || "";
       }
 
-      // Call OpenRouter (non-streaming)
-      const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const urlRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `api_base_url_${userId}`));
+      const baseUrl = (urlRow[0]?.value || process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+
+      // Call OpenAI-compatible API (non-streaming)
+      const orRes = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Key, Cpu, Eye, EyeOff, Save, CheckCircle } from "lucide-react";
+import { X, Key, Cpu, Eye, EyeOff, Save, CheckCircle, Globe } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetChatQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
 import { ensureSupabaseClient } from "@/lib/supabase";
@@ -7,6 +7,7 @@ import { ensureSupabaseClient } from "@/lib/supabase";
 interface Settings {
   openrouterKey: string;
   defaultModel: string;
+  apiBaseUrl: string;
 }
 
 interface Props {
@@ -17,7 +18,11 @@ interface Props {
 }
 
 export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Props) {
-  const [settings, setSettings] = useState<Settings>({ openrouterKey: "", defaultModel: "anthropic/claude-3.5-sonnet" });
+  const [settings, setSettings] = useState<Settings>({
+    openrouterKey: "",
+    defaultModel: "anthropic/claude-3.5-sonnet",
+    apiBaseUrl: "https://openrouter.ai/api/v1",
+  });
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -43,6 +48,7 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
             setSettings({
               openrouterKey: stored ? "" : (data.openrouter_key || ""),
               defaultModel: data.default_model || "anthropic/claude-3.5-sonnet",
+              apiBaseUrl: data.api_base_url || "https://openrouter.ai/api/v1",
             });
           }
         } catch {}
@@ -60,10 +66,14 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
         headers["Authorization"] = `Bearer ${session.access_token}`;
       }
 
-      const body: Record<string, string> = { default_model: settings.defaultModel };
+      const body: Record<string, string> = {
+        default_model: settings.defaultModel,
+        api_base_url: settings.apiBaseUrl.trim() || "https://openrouter.ai/api/v1",
+      };
       if (settings.openrouterKey.trim()) {
         body.openrouter_key = settings.openrouterKey.trim();
       }
+
       await fetch("/api/settings", {
         method: "POST",
         headers,
@@ -104,7 +114,7 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
                 S
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-zinc-100">Настройки</h2>
+                <h2 className="text-sm font-semibold text-zinc-100">Настройки Провайдера AI</h2>
               </div>
             </div>
             <button
@@ -119,16 +129,48 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
           {/* Body */}
           <div className="p-5 space-y-5">
 
+            {/* API Provider / Base URL */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-300">
+                <Globe size={13} className="text-zinc-400" />
+                API Провайдер / Base URL
+              </label>
+              <div className="flex gap-1.5 mb-1.5 flex-wrap">
+                {[
+                  { name: "OpenRouter", url: "https://openrouter.ai/api/v1" },
+                  { name: "HCNSEC API", url: "https://api.hcnsec.cn/v1" },
+                ].map(p => (
+                  <button
+                    key={p.url}
+                    type="button"
+                    onClick={() => setSettings(s => ({ ...s, apiBaseUrl: p.url }))}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono border transition-colors ${
+                      settings.apiBaseUrl === p.url
+                        ? "bg-zinc-800 border-zinc-600 text-zinc-100 font-semibold"
+                        : "bg-[#09090b] border-[#27272a] text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={settings.apiBaseUrl}
+                onChange={e => setSettings(s => ({ ...s, apiBaseUrl: e.target.value }))}
+                placeholder="https://openrouter.ai/api/v1 или https://api.hcnsec.cn/v1"
+                className="w-full bg-[#09090b] border border-[#27272a] rounded-md px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 font-mono"
+              />
+            </div>
+
+            {/* API Key */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-xs font-medium text-zinc-300">
                 <Key size={13} className="text-zinc-400" />
-                Токен OpenRouter API
+                Токен API Ключа
               </label>
               <p className="text-[11px] text-zinc-500">
-                Получи ключ на{" "}
-                <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-zinc-300 underline hover:text-white">
-                  openrouter.ai/keys
-                </a>
+                Ключ от OpenRouter, HCNSEC или вашего OpenAI-совместимого сервиса
               </p>
               {keyStored && !settings.openrouterKey && (
                 <p className="text-[11px] text-emerald-400 flex items-center gap-1 mb-1">
@@ -140,7 +182,7 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
                   type={showKey ? "text" : "password"}
                   value={settings.openrouterKey}
                   onChange={e => { setSettings(s => ({ ...s, openrouterKey: e.target.value })); setKeyStored(false); }}
-                  placeholder={keyStored && !settings.openrouterKey ? "● ● ● сохранён ● ● ●" : "sk-or-v1-..."}
+                  placeholder={keyStored && !settings.openrouterKey ? "● ● ● сохранён ● ● ●" : "sk-..."}
                   className="w-full bg-[#09090b] border border-[#27272a] rounded-md px-3 py-2 pr-9 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 font-mono"
                   data-testid="input-openrouter-key"
                 />
@@ -151,19 +193,17 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
               </div>
             </div>
 
+            {/* Default Model */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-xs font-medium text-zinc-300">
                 <Cpu size={13} className="text-zinc-400" />
                 Модель по умолчанию
               </label>
-              <p className="text-[11px] text-zinc-500">
-                Идентификатор модели OpenRouter (например: <span className="font-mono text-zinc-400">anthropic/claude-3.5-sonnet</span>)
-              </p>
               <input
                 type="text"
                 value={settings.defaultModel}
                 onChange={e => setSettings(s => ({ ...s, defaultModel: e.target.value }))}
-                placeholder="anthropic/claude-3.5-sonnet"
+                placeholder="anthropic/claude-3.5-sonnet или gpt-4o"
                 className="w-full bg-[#09090b] border border-[#27272a] rounded-md px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 font-mono"
                 data-testid="input-default-model"
               />

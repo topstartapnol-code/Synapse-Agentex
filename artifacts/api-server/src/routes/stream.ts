@@ -1521,18 +1521,24 @@ async function executeTools(
   return { hasTools, toolResults, statusMessages };
 }
 
-async function getApiKey(userId?: string): Promise<string | null> {
-  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
+async function getApiConfig(userId?: string): Promise<{ apiKey: string | null; baseUrl: string }> {
+  let apiKey: string | null = process.env.OPENROUTER_API_KEY || null;
+  let baseUrl: string = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+
   try {
     if (userId) {
-      const userRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `openrouter_key_${userId}`));
-      if (userRow[0]?.value) return userRow[0].value;
+      const keyRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `openrouter_key_${userId}`));
+      if (keyRow[0]?.value) apiKey = keyRow[0].value;
+
+      const urlRow = await db.select().from(settingsTable).where(eq(settingsTable.key, `api_base_url_${userId}`));
+      if (urlRow[0]?.value) baseUrl = urlRow[0].value;
     }
-    const rows = await db.select().from(settingsTable).where(eq(settingsTable.key, "openrouter_key"));
-    return rows[0]?.value || null;
   } catch {
-    return null;
+    /* ignore */
   }
+
+  baseUrl = (baseUrl || "https://openrouter.ai/api/v1").trim().replace(/\/+$/, "");
+  return { apiKey, baseUrl };
 }
 
 function safePath(p: string, chatRoot: string): string {
@@ -1544,9 +1550,9 @@ function safePath(p: string, chatRoot: string): string {
 }
 
 /** Generate a short title from user's first message */
-async function generateTitle(userMessage: string, apiKey: string): Promise<string | null> {
+async function generateTitle(userMessage: string, apiKey: string, baseUrl: string = "https://openrouter.ai/api/v1"): Promise<string | null> {
   try {
-    const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const resp = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -1627,7 +1633,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
 
     const chatRoot = path.join(WORKSPACE_ROOT, "chat-workspaces", `chat-${chatId}`);
     const userId = (req as any).userId || chat.userId;
-    const apiKey = await getApiKey(userId);
+    const { apiKey, baseUrl } = await getApiConfig(userId);
 
     if (!content?.trim()) {
       send({ type: "error", content: "Сообщение не может быть пустым" });
@@ -1646,7 +1652,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
 
     const isDefaultTitle = chat.title === "Новый чат" || chat.title === "New Chat";
     if (isDefaultTitle && apiKey) {
-      generateTitle(content, apiKey).then(title => {
+      generateTitle(content, apiKey, baseUrl).then(title => {
         if (!title) return;
         return db.update(chatsTable)
           .set({ title })
@@ -1658,7 +1664,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
     }
 
     if (!apiKey) {
-      const errContent = "Токен OpenRouter API не настроен. Пожалуйста, добавь ключ в Настройках (кнопка внизу боковой панели).";
+      const errContent = "Токен API не настроен. Пожалуйста, добавь ключ в Настройках (кнопка внизу боковой панели).";
       const [assistantMsg] = await db.insert(messagesTable).values({
         chatId, role: "assistant", content: errContent, tokensUsed: 0, status: "error",
       }).returning();
@@ -1674,12 +1680,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
       .where(eq(messagesTable.chatId, chatId))
       .orderBy(messagesTable.createdAt);
 
-    const modelRow = await db.select().from(settingsTable).where(eq(settingsTable.key, "default_model"));
-    const activeModel = modelRow[0]?.value || "anthropic/claude-3.5-sonnet";
-
-    if (chat.model !== activeModel) {
-      await db.update(chatsTable).set({ model: activeModel }).where(eq(chatsTable.id, chatId));
-    }
+    const activeModel = chat.model || "anthropic/claude-3.5-sonnet";
     send({ type: "model", model: activeModel });
 
     type TextPart = { type: "text"; text: string };
@@ -1710,7 +1711,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
 
     let response: Response;
     try {
-      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         signal: abort1.signal,
         headers: {
@@ -1843,7 +1844,7 @@ router.post("/chats/:id/stream", requireAuth, async (req, res) => {
       const timeout2 = setTimeout(() => abort2.abort(), 120_000);
       let toolResponse: Response | null = null;
       try {
-        toolResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        toolResponse = await fetch(`${baseUrl}/chat/completions`, {
           method: "POST",
           signal: abort2.signal,
           headers: {
