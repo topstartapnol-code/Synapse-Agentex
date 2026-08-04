@@ -135,24 +135,28 @@ export function SettingsDialog({ open, onClose, activeChatId, onModelSaved }: Pr
                 <Globe size={13} className="text-zinc-400" />
                 API Провайдер / Base URL
               </label>
-              <div className="flex gap-1.5 mb-1.5 flex-wrap">
+              <div className="flex gap-2 mb-1.5 flex-wrap">
                 {[
-                  { name: "OpenRouter", url: "https://openrouter.ai/api/v1" },
-                  { name: "HCNSEC API", url: "https://api.hcnsec.cn/v1" },
-                ].map(p => (
-                  <button
-                    key={p.url}
-                    type="button"
-                    onClick={() => setSettings(s => ({ ...s, apiBaseUrl: p.url }))}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono border transition-colors ${
-                      settings.apiBaseUrl === p.url
-                        ? "bg-zinc-800 border-zinc-600 text-zinc-100 font-semibold"
-                        : "bg-[#09090b] border-[#27272a] text-zinc-500 hover:text-zinc-300"
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                ))}
+                  { name: "🌐 OpenRouter", url: "https://openrouter.ai/api/v1" },
+                  { name: "⚡ HCNSEC API", url: "https://api.hcnsec.cn/v1" },
+                ].map(p => {
+                  const isActive = settings.apiBaseUrl.trim().replace(/\/+$/, "") === p.url;
+                  return (
+                    <button
+                      key={p.url}
+                      type="button"
+                      onClick={() => setSettings(s => ({ ...s, apiBaseUrl: p.url }))}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                        isActive
+                          ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400 font-semibold shadow-sm"
+                          : "bg-[#09090b] border-[#27272a] text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
+                      }`}
+                    >
+                      <span>{p.name}</span>
+                      {isActive && <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1 rounded">активен</span>}
+                    </button>
+                  );
+                })}
               </div>
               <input
                 type="text"
