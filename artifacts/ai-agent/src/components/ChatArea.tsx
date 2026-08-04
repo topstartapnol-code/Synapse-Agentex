@@ -589,15 +589,17 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
   const [input, setInput] = useState("");
   const [showCompletion, setShowCompletion] = useState(false);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [customModelInput, setCustomModelInput] = useState("");
 
   const handleSelectModel = async (newModel: string) => {
-    if (!chatId) return;
+    if (!chatId || !newModel.trim()) return;
     setModelMenuOpen(false);
+    setCustomModelInput("");
     try {
       await fetch(`/api/chats/${chatId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: newModel }),
+        body: JSON.stringify({ model: newModel.trim() }),
       });
       queryClient.invalidateQueries({ queryKey: getGetChatQueryKey(chatId) });
       queryClient.invalidateQueries({ queryKey: getListChatsQueryKey() });
@@ -891,7 +893,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
         </div>
 
         {/* Antigravity / Cursor IDE Composer Prompt Box */}
-        <div className="relative flex flex-col bg-card border border-border rounded-xl focus-within:border-ring transition-colors shadow-sm overflow-hidden">
+        <div className="relative flex flex-col bg-card border border-border rounded-xl focus-within:border-ring transition-colors shadow-sm">
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -930,33 +932,56 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                   title="Сменить модель"
                 >
                   <Sparkles size={11} className="text-muted-foreground" />
-                  <span>Composer {chat?.model?.split("/")[1] || "2.5 Fast"}</span>
+                  <span>Composer {chat?.model?.split("/").pop() || "2.5 Fast"}</span>
                   <span className="text-[9px] text-muted-foreground ml-0.5">˅</span>
                 </button>
 
                 {modelMenuOpen && (
-                  <div className="absolute bottom-full mb-1 left-0 z-30 w-56 bg-popover border border-border rounded-lg shadow-xl py-1 text-xs text-popover-foreground">
-                    <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-muted-foreground border-b border-border">
-                      Выбор модели
+                  <div className="absolute bottom-full mb-2 left-0 z-50 w-64 bg-popover border border-border rounded-xl shadow-2xl p-1.5 text-xs text-popover-foreground">
+                    <div className="px-2 py-1 text-[10px] uppercase font-semibold text-muted-foreground flex items-center justify-between border-b border-border mb-1 pb-1">
+                      <span>Выбор модели AI</span>
+                      <button onClick={() => setModelMenuOpen(false)} className="hover:text-foreground"><X size={12} /></button>
                     </div>
-                    {[
-                      { id: "qwen/qwen3.7-flash", label: "qwen3.7-flash" },
-                      { id: "anthropic/claude-3.5-sonnet", label: "claude-3.5-sonnet" },
-                      { id: "openai/gpt-4o", label: "gpt-4o" },
-                      { id: "google/gemini-2.0-flash-001", label: "gemini-2.0-flash-001" },
-                      { id: "deepseek/deepseek-r1", label: "deepseek-r1" },
-                    ].map(m => (
-                      <button
-                        key={m.id}
-                        onClick={() => handleSelectModel(m.id)}
-                        className={`w-full text-left px-2.5 py-1.5 hover:bg-muted flex items-center justify-between text-[11px] font-mono ${
-                          chat?.model === m.id ? "text-foreground font-bold bg-muted/60" : "text-muted-foreground"
-                        }`}
-                      >
-                        <span>{m.label}</span>
-                        {chat?.model === m.id && <span className="text-emerald-500 text-xs">✓</span>}
-                      </button>
-                    ))}
+
+                    <div className="flex gap-1 mb-1.5">
+                      <input
+                        type="text"
+                        value={customModelInput}
+                        onChange={e => setCustomModelInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter" && customModelInput.trim()) handleSelectModel(customModelInput); }}
+                        placeholder="Своя модель (напр. qwen3.7-flash)..."
+                        className="flex-1 bg-muted/70 border border-border rounded px-2 py-1 text-[11px] text-foreground font-mono focus:outline-none focus:border-primary"
+                      />
+                      {customModelInput.trim() && (
+                        <button
+                          onClick={() => handleSelectModel(customModelInput)}
+                          className="px-2 py-1 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/90"
+                        >
+                          OK
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto space-y-0.5">
+                      {[
+                        { id: "qwen/qwen3.7-flash", label: "qwen/qwen3.7-flash" },
+                        { id: "anthropic/claude-3.5-sonnet", label: "anthropic/claude-3.5-sonnet" },
+                        { id: "openai/gpt-4o", label: "openai/gpt-4o" },
+                        { id: "google/gemini-2.0-flash-001", label: "google/gemini-2.0-flash-001" },
+                        { id: "deepseek/deepseek-r1", label: "deepseek/deepseek-r1" },
+                      ].map(m => (
+                        <button
+                          key={m.id}
+                          onClick={() => handleSelectModel(m.id)}
+                          className={`w-full text-left px-2 py-1.5 rounded-md hover:bg-muted flex items-center justify-between text-[11px] font-mono transition-colors ${
+                            chat?.model === m.id ? "text-foreground font-bold bg-muted/60" : "text-muted-foreground"
+                          }`}
+                        >
+                          <span className="truncate">{m.label}</span>
+                          {chat?.model === m.id && <span className="text-emerald-500 text-xs shrink-0 ml-1">✓</span>}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
