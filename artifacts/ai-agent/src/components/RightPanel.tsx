@@ -40,17 +40,17 @@ export function RightPanel({ chatId, fileRefreshKey }: Props) {
   }
 
   return (
-    <div className="w-80 h-full flex flex-col shrink-0 bg-[#18181b] border-l border-[#27272a]">
-      {/* Tab bar (Antigravity / Cursor style) */}
-      <div className="flex h-9 shrink-0 items-center px-2 gap-1 border-b border-[#27272a] bg-[#18181b]">
+    <div className="w-80 h-full flex flex-col shrink-0 bg-sidebar border-l border-sidebar-border text-sidebar-foreground transition-colors">
+      {/* Tab bar */}
+      <div className="flex h-9 shrink-0 items-center px-2 gap-1 border-b border-sidebar-border bg-sidebar">
         {(["files", "terminal", "git"] as const).map(t => {
           const isActive = tab === t;
           return (
             <button key={t} onClick={() => setTab(t)}
               className={`flex flex-1 h-7 items-center justify-center gap-1.5 text-[11px] font-medium rounded-md transition-colors ${
                 isActive
-                  ? "bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700/60 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40"
+                  ? "bg-sidebar-accent text-sidebar-foreground font-semibold border border-sidebar-border shadow-sm"
+                  : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
               }`}>
               {t === "files" && <><FolderOpen size={12} /> Файлы</>}
               {t === "terminal" && <><TerminalIcon size={12} /> Терминал</>}
@@ -59,7 +59,7 @@ export function RightPanel({ chatId, fileRefreshKey }: Props) {
           );
         })}
         <button onClick={() => setIsOpen(false)}
-          className="p-1 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded transition-colors ml-1">
+          className="p-1 text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent rounded transition-colors ml-1">
           <X size={13} />
         </button>
       </div>

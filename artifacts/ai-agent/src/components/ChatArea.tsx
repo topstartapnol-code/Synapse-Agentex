@@ -718,7 +718,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
       <div className="synapse-bg flex-1 flex flex-col items-center justify-center text-muted-foreground p-8">
         <div className="flex flex-col items-center gap-5">
           <OctopusIcon swimming={false} size={72} />
-          <h2 className="synapse-logo-text text-2xl font-bold tracking-widest uppercase">SYNAPSE AGENT</h2>
+          <h2 className="text-2xl font-bold tracking-widest uppercase text-zinc-900 dark:text-zinc-100">SYNAPSE AGENT</h2>
           <p className="max-w-xs text-center text-sm leading-relaxed text-muted-foreground/50">
             Создайте новый чат, чтобы начать
           </p>
@@ -847,9 +847,9 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
           </div>
         )}
 
-        {/* Mode + thinking selectors (Antigravity / Cursor style) */}
+        {/* Mode + thinking selectors (Theme Adaptive) */}
         <div className="flex items-center justify-between gap-2 mb-2 flex-wrap text-xs">
-          <div className="flex items-center bg-[#18181b] border border-[#27272a] rounded-lg p-0.5">
+          <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
             {MODES.map((m) => {
               const isActive = agentMode === m.id;
               return (
@@ -859,8 +859,8 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                   title={m.title}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                     isActive
-                      ? "bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60 font-semibold"
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "bg-accent text-accent-foreground shadow-sm border border-border font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {m.label}
@@ -869,7 +869,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
             })}
           </div>
 
-          <div className="flex items-center bg-[#18181b] border border-[#27272a] rounded-lg p-0.5">
+          <div className="flex items-center bg-card border border-border rounded-lg p-0.5">
             {THINKING_LEVELS.map((t) => {
               const isActive = thinkingLevel === t.id;
               return (
@@ -879,8 +879,8 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                   title={t.title}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                     isActive
-                      ? "bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60 font-semibold"
-                      : "text-zinc-500 hover:text-zinc-300"
+                      ? "bg-accent text-accent-foreground shadow-sm border border-border font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {t.label}
@@ -891,24 +891,24 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
         </div>
 
         {/* Antigravity / Cursor IDE Composer Prompt Box */}
-        <div className="relative flex flex-col bg-[#18181b] border border-[#27272a] rounded-xl focus-within:border-zinc-500/50 transition-colors shadow-sm overflow-hidden">
+        <div className="relative flex flex-col bg-card border border-border rounded-xl focus-within:border-ring transition-colors shadow-sm overflow-hidden">
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isListening ? "Слушаю..." : "Plan, Build, / for skills, @ for context..."}
             disabled={isStreaming}
-            className="w-full bg-transparent border-none outline-none px-3.5 pt-3 pb-2 text-xs text-zinc-100 placeholder:text-zinc-500 resize-none min-h-[48px] max-h-[160px] font-sans disabled:opacity-50"
+            className="w-full bg-transparent border-none outline-none px-3.5 pt-3 pb-2 text-xs text-foreground placeholder:text-muted-foreground/60 resize-none min-h-[48px] max-h-[160px] font-sans disabled:opacity-50"
             rows={1}
             style={{ fieldSizing: "content" } as React.CSSProperties}
             data-testid="input-message"
           />
 
-          <div className="flex items-center justify-between px-2.5 pb-2 pt-1 border-t border-zinc-800/40">
+          <div className="flex items-center justify-between px-2.5 pb-2 pt-1 border-t border-border/60">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className={`p-1.5 rounded-md transition-colors text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 ${(attachedImages.length + attachedFiles.length) > 0 ? "text-zinc-200 bg-zinc-800" : ""}`}
+                className={`p-1.5 rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted ${(attachedImages.length + attachedFiles.length) > 0 ? "text-foreground bg-muted" : ""}`}
                 title="Прикрепить файл"
               >
                 <Paperclip size={14} />
@@ -926,17 +926,17 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                 <button
                   type="button"
                   onClick={() => setModelMenuOpen(v => !v)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800/80 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[11px] font-medium border border-zinc-700/60 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/80 hover:bg-muted text-foreground text-[11px] font-medium border border-border transition-colors"
                   title="Сменить модель"
                 >
-                  <Sparkles size={11} className="text-zinc-400" />
+                  <Sparkles size={11} className="text-muted-foreground" />
                   <span>Composer {chat?.model?.split("/")[1] || "2.5 Fast"}</span>
-                  <span className="text-[9px] text-zinc-500 ml-0.5">˅</span>
+                  <span className="text-[9px] text-muted-foreground ml-0.5">˅</span>
                 </button>
 
                 {modelMenuOpen && (
-                  <div className="absolute bottom-full mb-1 left-0 z-30 w-56 bg-[#18181b] border border-[#27272a] rounded-lg shadow-xl py-1 text-xs">
-                    <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-zinc-500 border-b border-zinc-800">
+                  <div className="absolute bottom-full mb-1 left-0 z-30 w-56 bg-popover border border-border rounded-lg shadow-xl py-1 text-xs text-popover-foreground">
+                    <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-muted-foreground border-b border-border">
                       Выбор модели
                     </div>
                     {[
@@ -949,12 +949,12 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                       <button
                         key={m.id}
                         onClick={() => handleSelectModel(m.id)}
-                        className={`w-full text-left px-2.5 py-1.5 hover:bg-zinc-800 flex items-center justify-between text-[11px] font-mono ${
-                          chat?.model === m.id ? "text-white font-bold bg-zinc-800/50" : "text-zinc-400"
+                        className={`w-full text-left px-2.5 py-1.5 hover:bg-muted flex items-center justify-between text-[11px] font-mono ${
+                          chat?.model === m.id ? "text-foreground font-bold bg-muted/60" : "text-muted-foreground"
                         }`}
                       >
                         <span>{m.label}</span>
-                        {chat?.model === m.id && <span className="text-emerald-400 text-xs">✓</span>}
+                        {chat?.model === m.id && <span className="text-emerald-500 text-xs">✓</span>}
                       </button>
                     ))}
                   </div>
@@ -965,7 +965,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
             <div className="flex items-center gap-1.5">
               <button
                 onClick={toggleVoice}
-                className={`p-1.5 transition-all rounded-md ${isListening ? "text-red-400 animate-pulse bg-red-500/10" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"}`}
+                className={`p-1.5 transition-all rounded-md ${isListening ? "text-red-500 animate-pulse bg-red-500/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
                 title={isListening ? "Остановить запись" : "Голосовой ввод"}
               >
                 {isListening ? <MicOff size={14} /> : <Mic size={14} />}
@@ -974,7 +974,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
               {isStreaming ? (
                 <button
                   onClick={cancelStream}
-                  className="p-1.5 rounded-md transition-all text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20"
+                  className="p-1.5 rounded-md transition-all text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20"
                   title="Остановить"
                 >
                   <X size={14} />
@@ -983,7 +983,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() && attachedImages.length === 0 && attachedFiles.length === 0}
-                  className="p-1.5 bg-zinc-200 hover:bg-white disabled:bg-zinc-800 text-zinc-900 disabled:text-zinc-600 rounded-md transition-colors disabled:cursor-not-allowed"
+                  className="p-1.5 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground disabled:text-muted-foreground rounded-md transition-colors disabled:cursor-not-allowed"
                   data-testid="button-send"
                 >
                   <Send size={13} strokeWidth={2.5} />
@@ -994,7 +994,7 @@ export function ChatArea({ chatId, onFilesCreated }: { chatId: number | null; on
         </div>
 
         {/* Bottom shortcut hint */}
-        <div className="mt-1.5 flex items-center justify-center gap-3 text-[10px] text-zinc-500 font-mono">
+        <div className="mt-1.5 flex items-center justify-center gap-3 text-[10px] text-muted-foreground font-mono">
           <span>⌘Enter · 🎤 голос · 📎 файлы</span>
         </div>
       </div>
